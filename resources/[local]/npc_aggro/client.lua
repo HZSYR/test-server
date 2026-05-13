@@ -30,11 +30,8 @@ local function ArmPed(ped)
     armedPeds[ped] = true
     
     local weapon = weapons[math.random(#weapons)]
-    GiveWeaponToPed(ped, weapon, 9999, false, true)
+    GiveWeaponToPed(ped, weapon, 9999, false, false)
     SetCurrentPedWeapon(ped, weapon, true)
-    SetPedInfiniteAmmo(ped, true, weapon)
-    SetPedConfigFlag(ped, 281, true)
-    SetPedConfigFlag(ped, 2, false)
 end
 
 local function MakePedAggro(ped, target)
@@ -49,37 +46,25 @@ local function MakePedAggro(ped, target)
         TaskLeaveVehicle(ped, GetVehiclePedIsIn(ped, false), 4160)
     end
     
-    ClearPedTasksImmediately(ped)
+    ClearPedTasks(ped)
     
-    if not armedPeds[ped] then
+    if IsPedHuman(ped) and not armedPeds[ped] then
         ArmPed(ped)
     end
     
     SetPedRelationshipGroupHash(ped, CHAOS_GROUP)
-    SetPedAsEnemy(ped, true)
     
-    SetEntityHealth(ped, 300)
-    SetPedArmour(ped, 100)
-    SetPedCanRagdoll(ped, false)
-    
-    SetBlockingOfNonTemporaryEvents(ped, true)
     SetPedFleeAttributes(ped, 0, false)
-    SetPedConfigFlag(ped, 2, false)
-    SetPedConfigFlag(ped, 281, true)
-    SetPedConfigFlag(ped, 292, true)
-    
     SetPedCombatAttributes(ped, 0, true)
     SetPedCombatAttributes(ped, 1, true)
     SetPedCombatAttributes(ped, 2, true)
     SetPedCombatAttributes(ped, 46, true)
-    SetPedCombatAbility(ped, 100)
+    SetPedCombatAbility(ped, 2)
     SetPedCombatMovement(ped, 2)
     SetPedCombatRange(ped, 2)
-    SetPedAccuracy(ped, 80)
-    SetPedHearingRange(ped, 200.0)
+    SetPedAccuracy(ped, 60)
     
     TaskCombatPed(ped, target, 0, 16)
-    SetPedKeepTask(ped, true)
 end
 
 local function TriggerChaos(sourceCoords, radius)
@@ -136,7 +121,7 @@ Citizen.CreateThread(function()
             if ped ~= 0 and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) then
                 local dist = #(pCoords - GetEntityCoords(ped))
                 
-                if dist < 100.0 and not armedPeds[ped] then
+                if dist < 100.0 and not armedPeds[ped] and IsPedHuman(ped) then
                     ArmPed(ped)
                 end
                 
