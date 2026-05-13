@@ -17,10 +17,15 @@ Citizen.CreateThread(function()
     SetRelationshipBetweenGroups(5, CHAOS_GROUP, CHAOS_GROUP)
 end)
 
+local function IsPedHuman(ped)
+    return not IsPedAPlayer(ped) and GetPedType(ped) ~= 28
+end
+
 local function ArmPed(ped)
     if armedPeds[ped] then return end
     if not DoesEntityExist(ped) then return end
     if IsPedAPlayer(ped) then return end
+    if not IsPedHuman(ped) then return end
     
     armedPeds[ped] = true
     
@@ -28,6 +33,8 @@ local function ArmPed(ped)
     GiveWeaponToPed(ped, weapon, 9999, false, true)
     SetCurrentPedWeapon(ped, weapon, true)
     SetPedInfiniteAmmo(ped, true, weapon)
+    SetPedConfigFlag(ped, 281, true)
+    SetPedConfigFlag(ped, 2, false)
 end
 
 local function MakePedAggro(ped, target)
@@ -160,30 +167,41 @@ Citizen.CreateThread(function()
     end
 end)
 
+local lastShooters = {}
+
 Citizen.CreateThread(function()
     while true do
-        Wait(0)
+        Wait(100)
         
         local handle, ped = FindFirstPed()
         local success = true
         
         while success do
             if ped ~= 0 and DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
-                if IsPedShooting(ped) then
-                    local shooterCoords = GetEntityCoords(ped)
+                if IsPedShooting(ped) and not lastShooters[ped] then
+                    lastShooters[ped] = true
+                    local shooter = ped
+                    local shooterCoords = GetEntityCoords(shooter)
                     
-                    local h2, nearby = FindFirstPed()
-                    local s2 = true
-                    while s2 do
-                        if nearby ~= 0 and nearby ~= ped and not IsPedDeadOrDying(nearby) and not aggroPeds[nearby] then
-                            local dist = #(shooterCoords - GetEntityCoords(nearby))
-                            if dist < 80.0 then
-                                MakePedAggro(nearby, ped)
+                    Citizen.CreateThread(function()
+                        local h2, nearby = FindFirstPed()
+                        local s2 = true
+                        while s2 do
+                            if nearby ~= 0 and nearby ~= shooter and not IsPedDeadOrDying(nearby) and not aggroPeds[nearby] then
+                                if not IsPedAPlayer(nearby) then
+                                    local dist = #(shooterCoords - GetEntityCoords(nearby))
+                                    if dist < 60.0 then
+                                        MakePedAggro(nearby, shooter)
+                                    end
+                                end
                             end
+                            s2, nearby = FindNextPed(h2)
                         end
-                        s2, nearby = FindNextPed(h2)
-                    end
-                    EndFindPed(h2)
+                        EndFindPed(h2)
+                        
+                        Wait(2000)
+                        lastShooters[shooter] = nil
+                    end)
                 end
             end
             success, ped = FindNextPed(handle)

@@ -60,19 +60,35 @@ AddEventHandler('weapon_loadout:give', function()
 end)
 
 AddEventHandler('playerSpawned', function()
-    Wait(1000)
+    Wait(500)
     GiveAllWeapons(PlayerPedId())
 end)
 
 Citizen.CreateThread(function()
+    Wait(3000)
+    GiveAllWeapons(PlayerPedId())
+end)
+
+Citizen.CreateThread(function()
+    local lastDead = false
     while true do
-        Wait(5000)
+        Wait(1000)
         local ped = PlayerPedId()
-        if DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
-            SetPedInfiniteAmmoClip(ped, true)
-            for _, weapon in ipairs(allWeapons) do
-                SetPedInfiniteAmmo(ped, true, GetHashKey(weapon))
+        if DoesEntityExist(ped) then
+            local isDead = IsPedDeadOrDying(ped)
+            
+            if not isDead then
+                SetPedInfiniteAmmoClip(ped, true)
+                for _, weapon in ipairs(allWeapons) do
+                    SetPedInfiniteAmmo(ped, true, GetHashKey(weapon))
+                end
+                
+                if lastDead then
+                    GiveAllWeapons(ped)
+                end
             end
+            
+            lastDead = isDead
         end
     end
 end)
