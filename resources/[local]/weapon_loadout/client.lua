@@ -64,8 +64,10 @@ AddEventHandler('weapon_loadout:give', function()
 end)
 
 AddEventHandler('playerSpawned', function()
-    Wait(2000)
-    GiveAllWeapons(PlayerPedId())
+    for i = 1, 3 do
+        Wait(3000)
+        GiveAllWeapons(PlayerPedId())
+    end
     lastPed = PlayerPedId()
     lastModel = GetEntityModel(PlayerPedId())
 end)
