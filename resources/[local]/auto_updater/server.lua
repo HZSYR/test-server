@@ -524,4 +524,87 @@ exports('ScanNow', function() return ScanForResources() end)
 exports('RefreshResource', function(name) return RefreshResources(name) end)
 exports('IsResourceTracked', function(name) return State.resources[name] ~= nil end)
 
+RegisterNetEvent('auto_updater:requestData')
+AddEventHandler('auto_updater:requestData', function()
+    local src = source
+    local counts = CountResources()
+    TriggerClientEvent('auto_updater:updateData', src, {
+        total = counts.total,
+        active = counts.started,
+        reloaded = State.stats.reloaded,
+        paused = State.paused,
+        logs = State.logs
+    })
+end)
+
+RegisterNetEvent('auto_updater:scan')
+AddEventHandler('auto_updater:scan', function()
+    local src = source
+    local newRes = ScanForResources()
+    local msg = #newRes > 0 and ("Ditemukan %d resource baru"):format(#newRes) or "Tidak ada resource baru"
+    TriggerClientEvent('auto_updater:notify', src, msg, #newRes > 0 and "success" or "info")
+    Wait(500)
+    TriggerEvent('auto_updater:requestData')
+end)
+
+RegisterNetEvent('auto_updater:refresh')
+AddEventHandler('auto_updater:refresh', function(name)
+    local src = source
+    RefreshResources(name)
+    TriggerClientEvent('auto_updater:notify', src, "Refresh selesai", "success")
+    Wait(500)
+    TriggerEvent('auto_updater:requestData')
+end)
+
+RegisterNetEvent('auto_updater:restart')
+AddEventHandler('auto_updater:restart', function(name)
+    local src = source
+    if name and GetResourceState(name) ~= "missing" then
+        ExecuteCommand("stop " .. name)
+        Wait(500)
+        ExecuteCommand("start " .. name)
+        TriggerClientEvent('auto_updater:notify', src, ("Resource %s di-restart"):format(name), "success")
+    end
+end)
+
+RegisterNetEvent('auto_updater:health')
+AddEventHandler('auto_updater:health', function()
+    local src = source
+    local issues = HealthCheck()
+    local msg = #issues > 0 and ("Ditemukan %d masalah"):format(#issues) or "Semua resource sehat"
+    TriggerClientEvent('auto_updater:notify', src, msg, #issues > 0 and "warning" or "success")
+    Wait(500)
+    TriggerEvent('auto_updater:requestData')
+end)
+
+RegisterNetEvent('auto_updater:pause')
+AddEventHandler('auto_updater:pause', function()
+    local src = source
+    State.paused = true
+    Log("Auto scan di-PAUSE", "WARNING")
+    TriggerClientEvent('auto_updater:notify', src, "Auto scan di-pause", "warning")
+    Wait(200)
+    TriggerEvent('auto_updater:requestData')
+end)
+
+RegisterNetEvent('auto_updater:resume')
+AddEventHandler('auto_updater:resume', function()
+    local src = source
+    State.paused = false
+    Log("Auto scan DILANJUTKAN", "SUCCESS")
+    TriggerClientEvent('auto_updater:notify', src, "Auto scan dilanjutkan", "success")
+    Wait(200)
+    TriggerEvent('auto_updater:requestData')
+end)
+
+RegisterNetEvent('auto_updater:filecheck')
+AddEventHandler('auto_updater:filecheck', function()
+    local src = source
+    local changed = CheckAllFileChanges()
+    local msg = #changed > 0 and ("Ditemukan %d file berubah"):format(#changed) or "Tidak ada perubahan file"
+    TriggerClientEvent('auto_updater:notify', src, msg, #changed > 0 and "warning" or "success")
+    Wait(500)
+    TriggerEvent('auto_updater:requestData')
+end)
+
 Log("^3Auto Updater v5.0 loaded^7")

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auto Updater</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: transparent;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            height: 100vh;
+            padding-right: 30px;
+            color: #fff;
+        }
+        .container {
+            display: none;
+            background: linear-gradient(135deg, rgba(20, 20, 35, 0.95), rgba(30, 30, 50, 0.95));
+            border-radius: 15px;
+            padding: 25px;
+            width: 450px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(100, 150, 255, 0.2);
+            border: 1px solid rgba(100, 150, 255, 0.3);
+        }
+        .container.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header h1 {
+            font-size: 24px;
+            background: linear-gradient(90deg, #64b5f6, #42a5f5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+        }
+        .header p {
+            color: #888;
+            font-size: 12px;
+        }
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 13px;
+        }
+        .status-item {
+            text-align: center;
+        }
+        .status-item .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #64b5f6;
+        }
+        .status-item .label {
+            color: #888;
+            font-size: 11px;
+        }
+        .status-active {
+            color: #4caf50 !important;
+        }
+        .status-paused {
+            color: #ff9800 !important;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #42a5f5, #1e88e5);
+            color: white;
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #66bb6a, #43a047);
+            color: white;
+        }
+        .btn-warning {
+            background: linear-gradient(135deg, #ffa726, #fb8c00);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef5350, #e53935);
+            color: white;
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-full {
+            grid-column: span 2;
+        }
+        .log-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .log-section h3 {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 10px;
+        }
+        .log-item {
+            font-size: 12px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: #aaa;
+        }
+        .log-item:last-child {
+            border-bottom: none;
+        }
+        .log-success { color: #4caf50; }
+        .log-warning { color: #ff9800; }
+        .log-error { color: #f44336; }
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: #888;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.2s;
+        }
+        .close-btn:hover {
+            background: rgba(255, 0, 0, 0.3);
+            color: #fff;
+        }
+        .container {
+            position: relative;
+        }
+        .notify {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            animation: notifyIn 0.3s ease;
+            z-index: 1000;
+        }
+        .notify.success { background: linear-gradient(135deg, #66bb6a, #43a047); }
+        .notify.warning { background: linear-gradient(135deg, #ffa726, #fb8c00); }
+        .notify.error { background: linear-gradient(135deg, #ef5350, #e53935); }
+        .notify.info { background: linear-gradient(135deg, #42a5f5, #1e88e5); }
+        @keyframes notifyIn {
+            from { opacity: 0; transform: translateX(50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb { background: rgba(100, 150, 255, 0.5); border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container" id="menu">
+        <button class="close-btn" onclick="closeMenu()">×</button>
+        
+        <div class="header">
+            <h1>🔄 Auto Updater</h1>
+            <p>Sistem Pembaruan Resource Otomatis v5.0</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="value" id="totalRes">0</div>
+                <div class="label">Total Resource</div>
+            </div>
+            <div class="status-item">
+                <div class="value" id="activeRes">0</div>
+                <div class="label">Aktif</div>
+            </div>
+            <div class="status-item">
+                <div class="value" id="reloaded">0</div>
+                <div class="label">Di-reload</div>
+            </div>
+            <div class="status-item">
+                <div class="value status-active" id="status">AKTIF</div>
+                <div class="label">Status</div>
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" onclick="scan()">
+                🔍 Scan Resource
+            </button>
+            <button class="btn btn-success" onclick="filecheck()">
+                📁 Cek File
+            </button>
+            <button class="btn btn-warning" onclick="refreshAll()">
+                🔄 Refresh Semua
+            </button>
+            <button class="btn btn-danger" onclick="health()">
+                ❤️ Cek Kesehatan
+            </button>
+            <button class="btn btn-secondary" onclick="togglePause()" id="pauseBtn">
+                ⏸️ Pause
+            </button>
+            <button class="btn btn-secondary" onclick="closeMenu()">
+                ❌ Tutup
+            </button>
+        </div>
+
+        <div class="log-section">
+            <h3>📋 Log Aktivitas</h3>
+            <div id="logs">
+                <div class="log-item">Menunggu aktivitas...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isPaused = false;
+
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            
+            if (data.action === 'toggle') {
+                const menu = document.getElementById('menu');
+                if (data.show) {
+                    menu.classList.add('show');
+                } else {
+                    menu.classList.remove('show');
+                }
+            }
+            
+            if (data.action === 'updateData') {
+                const d = data.data;
+                document.getElementById('totalRes').textContent = d.total || 0;
+                document.getElementById('activeRes').textContent = d.active || 0;
+                document.getElementById('reloaded').textContent = d.reloaded || 0;
+                
+                const statusEl = document.getElementById('status');
+                const pauseBtn = document.getElementById('pauseBtn');
+                
+                if (d.paused) {
+                    statusEl.textContent = 'PAUSE';
+                    statusEl.className = 'value status-paused';
+                    pauseBtn.innerHTML = '▶️ Lanjut';
+                    isPaused = true;
+                } else {
+                    statusEl.textContent = 'AKTIF';
+                    statusEl.className = 'value status-active';
+                    pauseBtn.innerHTML = '⏸️ Pause';
+                    isPaused = false;
+                }
+                
+                if (d.logs && d.logs.length > 0) {
+                    const logsEl = document.getElementById('logs');
+                    logsEl.innerHTML = '';
+                    d.logs.slice(-10).reverse().forEach(log => {
+                        const div = document.createElement('div');
+                        div.className = 'log-item';
+                        if (log.level === 'SUCCESS') div.classList.add('log-success');
+                        if (log.level === 'WARNING') div.classList.add('log-warning');
+                        if (log.level === 'ERROR') div.classList.add('log-error');
+                        div.textContent = `[${log.time}] ${log.message.replace(/\^[0-9]/g, '')}`;
+                        logsEl.appendChild(div);
+                    });
+                }
+            }
+            
+            if (data.action === 'notify') {
+                showNotify(data.message, data.type);
+            }
+        });
+
+        function closeMenu() {
+            document.getElementById('menu').classList.remove('show');
+            fetch('https://auto_updater/close', { method: 'POST', body: JSON.stringify({}) });
+        }
+
+        function scan() {
+            fetch('https://auto_updater/scan', { method: 'POST', body: JSON.stringify({}) });
+            showNotify('Memulai scan resource...', 'info');
+        }
+
+        function filecheck() {
+            fetch('https://auto_updater/filecheck', { method: 'POST', body: JSON.stringify({}) });
+            showNotify('Memeriksa perubahan file...', 'info');
+        }
+
+        function refreshAll() {
+            fetch('https://auto_updater/refresh', { method: 'POST', body: JSON.stringify({name: ''}) });
+            showNotify('Refresh semua resource...', 'warning');
+        }
+
+        function health() {
+            fetch('https://auto_updater/health', { method: 'POST', body: JSON.stringify({}) });
+            showNotify('Memeriksa kesehatan resource...', 'info');
+        }
+
+        function togglePause() {
+            if (isPaused) {
+                fetch('https://auto_updater/resume', { method: 'POST', body: JSON.stringify({}) });
+                showNotify('Auto scan dilanjutkan', 'success');
+            } else {
+                fetch('https://auto_updater/pause', { method: 'POST', body: JSON.stringify({}) });
+                showNotify('Auto scan di-pause', 'warning');
+            }
+        }
+
+        function showNotify(message, type) {
+            const notify = document.createElement('div');
+            notify.className = 'notify ' + (type || 'info');
+            notify.textContent = message;
+            document.body.appendChild(notify);
+            setTimeout(() => notify.remove(), 3000);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeMenu();
+            }
+        });
+    </script>
+</body>
+</html>
