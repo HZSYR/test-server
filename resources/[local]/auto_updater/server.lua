@@ -1,8 +1,8 @@
 local Config = {
-    scanInterval = 30,
-    fileCheckInterval = 15,
-    healthCheckInterval = 120,
-    startDelay = 1000,
+    scanInterval = 10,
+    fileCheckInterval = 5,
+    healthCheckInterval = 60,
+    startDelay = 500,
     autoStart = true,
     autoReload = true,
     autoRestart = true,
@@ -20,10 +20,12 @@ local Config = {
     watchFiles = {
         "fxmanifest.lua", "__resource.lua",
         "server.lua", "client.lua", "shared.lua", 
-        "config.lua", "config.js", "config.json"
+        "config.lua", "config.js", "config.json",
+        "server/main.lua", "client/main.lua",
+        "html/index.html", "html/script.js", "html/style.css"
     },
     maxLogEntries = 50,
-    debugMode = false
+    debugMode = true
 }
 
 local State = {
@@ -94,19 +96,24 @@ end
 
 local function SimpleHash(str)
     if not str then return "0" end
-    local hash = 5381
-    local len = math.min(#str, 50000)
-    for i = 1, len do
-        hash = ((hash * 33) + string.byte(str, i)) % 2147483647
+    local hash = 0
+    for i = 1, #str do
+        hash = (hash * 31 + string.byte(str, i)) % 1000000007
     end
-    return tostring(hash)
+    return tostring(hash) .. "_" .. tostring(#str)
 end
 
 local function GetFileSignature(resourceName)
     local sig = {}
-    for _, file in ipairs(Config.watchFiles) do
+    local files = Config.watchFiles
+    for _, file in ipairs(files) do
         local content = LoadResourceFile(resourceName, file)
-        if content then sig[file] = SimpleHash(content) end
+        if content and #content > 0 then 
+            sig[file] = SimpleHash(content)
+            if Config.debugMode then
+                Log(("  [DEBUG] %s/%s = %s"):format(resourceName, file, sig[file]), "DEBUG")
+            end
+        end
     end
     return next(sig) and sig or nil
 end
@@ -118,6 +125,7 @@ local function CheckResourceFileChanges(resourceName)
     local oldSig = State.fileHashes[resourceName]
     if not oldSig then
         State.fileHashes[resourceName] = newSig
+        Log(("Initialized hash for: %s"):format(resourceName), "INFO")
         return false, nil
     end
     
@@ -125,6 +133,7 @@ local function CheckResourceFileChanges(resourceName)
     for file, hash in pairs(newSig) do
         if oldSig[file] and oldSig[file] ~= hash then
             table.insert(changedFiles, file)
+            Log(("Hash changed: %s/%s [%s -> %s]"):format(resourceName, file, oldSig[file], hash), "WARNING")
         elseif not oldSig[file] then
             table.insert(changedFiles, file .. " (new)")
         end
@@ -228,27 +237,32 @@ local function CheckAllFileChanges()
     State.stats.lastFileCheck = os.time()
     
     local changedResources = {}
-    local count = 0
+    local checkedCount = 0
+    
+    Log("^5[FILE CHECK] Scanning all resources...^7", "DEBUG")
     
     for name, data in pairs(State.resources) do
         if data.state == "started" and not IsBlacklisted(name) then
+            checkedCount = checkedCount + 1
             local hasChanges, files = CheckResourceFileChanges(name)
             if hasChanges then
                 table.insert(changedResources, {name = name, files = files})
                 State.stats.filesChanged = State.stats.filesChanged + 1
-                Log(("File changed: ^3%s^7 (%s)"):format(name, table.concat(files, ", ")), "WARNING")
+                Log(("^1FILE CHANGED: %s^7 (%s)"):format(name, table.concat(files, ", ")), "WARNING")
                 if Config.autoReload then
+                    Wait(100)
                     ExecuteCommand("ensure " .. name)
                     State.stats.reloaded = State.stats.reloaded + 1
-                    Log(("Auto reloaded: ^2%s^7"):format(name), "SUCCESS")
+                    Log(("^2AUTO RELOADED: %s^7"):format(name), "SUCCESS")
                     NotifyPlayers(("Resource %s di-reload (file berubah)"):format(name), "warning")
                     SendDiscord("📝 File Changed", ("Resource **%s** di-reload\nFiles: %s"):format(name, table.concat(files, ", ")), 16776960)
                 end
             end
         end
-        count = count + 1
-        if count % 10 == 0 then Wait(0) end
+        Wait(0)
     end
+    
+    Log(("^5[FILE CHECK] Checked %d resources, found %d changes^7"):format(checkedCount, #changedResources), "DEBUG")
     
     State.fileChecking = false
     return changedResources

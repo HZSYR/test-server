@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Speedometer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', 'Segoe UI', sans-serif;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+            background: transparent;
+            overflow: hidden;
+        }
+        
+        .speedometer {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 280px;
+            height: 180px;
+            background: linear-gradient(145deg, rgba(15, 15, 25, 0.95), rgba(25, 25, 40, 0.9));
+            border-radius: 20px;
+            padding: 20px;
+            display: none;
+            border: 2px solid rgba(0, 200, 255, 0.3);
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.5),
+                0 0 30px rgba(0, 200, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+        
+        .speedometer.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .speed-display {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .speed-value {
+            font-size: 56px;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
+            line-height: 1;
+        }
+        
+        .speed-unit {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-left: 5px;
+        }
+        
+        .gear-display {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(145deg, #1a1a2e, #16213e);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 100, 100, 0.5);
+            box-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
+        }
+        
+        .gear-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ff6b6b;
+        }
+        
+        .rpm-container {
+            margin-bottom: 12px;
+        }
+        
+        .rpm-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .rpm-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff88, #ffff00, #ff4444);
+            border-radius: 4px;
+            transition: width 0.1s ease;
+            box-shadow: 0 0 10px currentColor;
+        }
+        
+        .rpm-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        
+        .stat-item {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .stat-icon {
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+        
+        .stat-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .stat-bar {
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        
+        .stat-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+        
+        .health-fill {
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #00ff88);
+        }
+        
+        .fuel-fill {
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #00aaff);
+        }
+        
+        .vehicle-type {
+            position: absolute;
+            top: 20px;
+            left: 25px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="speedometer" id="speedometer">
+        <div class="vehicle-type" id="vehicleType">MOBIL</div>
+        
+        <div class="gear-display">
+            <span class="gear-value" id="gear">N</span>
+        </div>
+        
+        <div class="speed-display">
+            <span class="speed-value" id="speed">0</span>
+            <span class="speed-unit">KM/H</span>
+        </div>
+        
+        <div class="rpm-container">
+            <div class="rpm-label">
+                <span>RPM</span>
+                <span id="rpmPercent">0%</span>
+            </div>
+            <div class="rpm-bar">
+                <div class="rpm-fill" id="rpmFill"></div>
+            </div>
+        </div>
+        
+        <div class="stats-row">
+            <div class="stat-item">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-value" id="health">100%</div>
+                <div class="stat-bar">
+                    <div class="stat-fill health-fill" id="healthFill" style="width: 100%"></div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon">⛽</div>
+                <div class="stat-value" id="fuel">100%</div>
+                <div class="stat-bar">
+                    <div class="stat-fill fuel-fill" id="fuelFill" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const speedometer = document.getElementById('speedometer');
+        const speedEl = document.getElementById('speed');
+        const gearEl = document.getElementById('gear');
+        const rpmFill = document.getElementById('rpmFill');
+        const rpmPercent = document.getElementById('rpmPercent');
+        const healthEl = document.getElementById('health');
+        const healthFill = document.getElementById('healthFill');
+        const fuelEl = document.getElementById('fuel');
+        const fuelFill = document.getElementById('fuelFill');
+        const vehicleType = document.getElementById('vehicleType');
+
+        window.addEventListener('message', function(event) {
+            const data = event.data;
+            
+            if (data.action === 'show') {
+                speedometer.classList.add('show');
+            }
+            
+            if (data.action === 'hide') {
+                speedometer.classList.remove('show');
+            }
+            
+            if (data.action === 'update') {
+                speedEl.textContent = data.speed;
+                
+                if (data.gear === 0) {
+                    gearEl.textContent = 'R';
+                    gearEl.style.color = '#ff6b6b';
+                } else {
+                    gearEl.textContent = data.gear;
+                    gearEl.style.color = data.rpm > 0.8 ? '#ff6b6b' : '#00ff88';
+                }
+                
+                const rpmWidth = Math.min(data.rpm * 100, 100);
+                rpmFill.style.width = rpmWidth + '%';
+                rpmPercent.textContent = Math.floor(rpmWidth) + '%';
+                
+                if (data.rpm > 0.9) {
+                    rpmFill.style.boxShadow = '0 0 20px #ff4444';
+                } else {
+                    rpmFill.style.boxShadow = '0 0 10px currentColor';
+                }
+                
+                healthEl.textContent = data.health + '%';
+                healthFill.style.width = data.health + '%';
+                
+                fuelEl.textContent = data.fuel + '%';
+                fuelFill.style.width = data.fuel + '%';
+                
+                if (data.isBike) {
+                    vehicleType.textContent = 'MOTOR';
+                } else if (data.isBoat) {
+                    vehicleType.textContent = 'KAPAL';
+                } else if (data.isPlane) {
+                    vehicleType.textContent = 'PESAWAT';
+                } else {
+                    vehicleType.textContent = 'MOBIL';
+                }
+                
+                if (data.speed > 150) {
+                    speedEl.style.color = '#ff4444';
+                    speedEl.style.textShadow = '0 0 30px rgba(255, 68, 68, 0.8)';
+                } else if (data.speed > 100) {
+                    speedEl.style.color = '#ffaa00';
+                    speedEl.style.textShadow = '0 0 25px rgba(255, 170, 0, 0.8)';
+                } else {
+                    speedEl.style.color = '#fff';
+                    speedEl.style.textShadow = '0 0 20px rgba(0, 200, 255, 0.8)';
+                }
+            }
+        });
+    </script>
+</body>
+</html>

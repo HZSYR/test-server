@@ -1,18 +1,5 @@
-local weapons = {
-    `WEAPON_PISTOL`, `WEAPON_COMBATPISTOL`, `WEAPON_PISTOL50`,
-    `WEAPON_MICROSMG`, `WEAPON_SMG`, `WEAPON_ASSAULTSMG`,
-    `WEAPON_ASSAULTRIFLE`, `WEAPON_CARBINERIFLE`, `WEAPON_COMPACTRIFLE`,
-    `WEAPON_PUMPSHOTGUN`, `WEAPON_SAWNOFFSHOTGUN`,
-    `WEAPON_BAT`, `WEAPON_CROWBAR`, `WEAPON_KNIFE`, `WEAPON_MACHETE`,
-    `WEAPON_SWITCHBLADE`, `WEAPON_HAMMER`, `WEAPON_HATCHET`
-}
-
 local aggroPeds = {}
 local policeDispatchEnabled = true
-
-local function GetRandomWeapon()
-    return weapons[math.random(1, #weapons)]
-end
 
 local function MakePedAggressive(ped, target)
     if not DoesEntityExist(ped) then return end
@@ -20,138 +7,136 @@ local function MakePedAggressive(ped, target)
     if aggroPeds[ped] then return end
     
     aggroPeds[ped] = true
+    print("[NPC AGGRO] ^1NPC MARAH: " .. ped .. "^7")
     
+    if IsPedInAnyVehicle(ped, false) then
+        TaskLeaveVehicle(ped, GetVehiclePedIsIn(ped, false), 256)
+        Citizen.Wait(500)
+    end
+    
+    SetPedCanRagdoll(ped, false)
     SetPedMaxHealth(ped, 500)
     SetEntityHealth(ped, 500)
+    SetPedArmour(ped, 100)
     
-    local weapon = GetRandomWeapon()
-    GiveWeaponToPed(ped, weapon, 999, false, true)
+    local weaponList = {
+        0x1B06D571, 0x5EF9FEC4, 0x22D8FE39,
+        0x13532244, 0x2BE6766B, 0xEFE7E2DF,
+        0xBFEFFF6D, 0x83BF0278, 0x0C472FE2,
+        0x1D073A89, 0x7FD62962,
+        0x958A4A8F, 0x84BD7BFD, 0x99B507EA, 0xDD5DF8D9
+    }
+    local weapon = weaponList[math.random(#weaponList)]
+    
+    GiveWeaponToPed(ped, weapon, 9999, false, true)
     SetCurrentPedWeapon(ped, weapon, true)
+    SetPedInfiniteAmmo(ped, true, weapon)
     
-    ClearPedTasks(ped)
+    ClearPedTasksImmediately(ped)
+    SetBlockingOfNonTemporaryEvents(ped, true)
     SetPedFleeAttributes(ped, 0, false)
-    SetPedCombatAttributes(ped, 46, true)
-    SetPedCombatAttributes(ped, 5, true)
     SetPedCombatAttributes(ped, 0, true)
+    SetPedCombatAttributes(ped, 1, true)
+    SetPedCombatAttributes(ped, 2, true)
+    SetPedCombatAttributes(ped, 46, true)
     SetPedCombatAbility(ped, 2)
     SetPedCombatMovement(ped, 2)
     SetPedCombatRange(ped, 2)
-    SetPedAccuracy(ped, 60)
+    SetPedAccuracy(ped, 70)
+    SetPedSeeingRange(ped, 100.0)
+    SetPedHearingRange(ped, 100.0)
+    SetPedAlertness(ped, 3)
     
-    SetPedAsEnemy(ped, true)
-    SetPedRelationshipGroupHash(ped, `HATES_PLAYER`)
+    local hash = GetHashKey("HATES_PLAYER")
+    SetPedRelationshipGroupHash(ped, hash)
     
     TaskCombatPed(ped, target, 0, 16)
+    SetPedKeepTask(ped, true)
     
     if policeDispatchEnabled then
-        local coords = GetEntityCoords(ped)
         SetPlayerWantedLevel(PlayerId(), 1, false)
         SetPlayerWantedLevelNow(PlayerId(), false)
-        
-        CreateThread(function()
-            Wait(3000)
-            local x, y, z = table.unpack(coords)
-            local blip = AddBlipForCoord(x, y, z)
-            SetBlipSprite(blip, 161)
-            SetBlipColour(blip, 1)
-            SetBlipScale(blip, 0.8)
-            BeginTextCommandSetBlipName("STRING")
-            AddTextComponentString("Keributan")
-            EndTextCommandSetBlipName(blip)
-            
-            Wait(30000)
-            RemoveBlip(blip)
-        end)
     end
 end
 
-local function CheckPedDamage()
-    local playerPed = PlayerPedId()
-    local playerCoords = GetEntityCoords(playerPed)
+Citizen.CreateThread(function()
+    print("[NPC AGGRO] ^2=== SISTEM NPC AGGRO AKTIF ===^7")
+    print("[NPC AGGRO] ^3Pukul atau tabrak NPC untuk memancing!^7")
     
-    local peds = {}
-    local handle, ped = FindFirstPed()
-    local success = true
-    
-    repeat
-        if DoesEntityExist(ped) and not IsPedAPlayer(ped) then
-            table.insert(peds, ped)
-        end
-        success, ped = FindNextPed(handle)
-    until not success
-    EndFindPed(handle)
-    
-    for _, npc in ipairs(peds) do
-        if DoesEntityExist(npc) and not IsPedDeadOrDying(npc) then
-            if HasEntityBeenDamagedByEntity(npc, playerPed, true) then
-                ClearEntityLastDamageEntity(npc)
-                MakePedAggressive(npc, playerPed)
-            end
-            
-            local vehicle = GetVehiclePedIsIn(playerPed, false)
-            if vehicle ~= 0 then
-                if HasEntityBeenDamagedByEntity(npc, vehicle, true) then
-                    ClearEntityLastDamageEntity(npc)
-                    MakePedAggressive(npc, playerPed)
+    while true do
+        Citizen.Wait(100)
+        
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local vehicle = GetVehiclePedIsIn(playerPed, false)
+        
+        local handle, ped = FindFirstPed()
+        local found = true
+        
+        while found do
+            if DoesEntityExist(ped) and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) and not aggroPeds[ped] then
+                local dist = #(playerCoords - GetEntityCoords(ped))
+                
+                if dist < 30.0 then
+                    local damaged = HasEntityBeenDamagedByEntity(ped, playerPed, true)
+                    local vehicleDamage = vehicle ~= 0 and HasEntityBeenDamagedByEntity(ped, vehicle, true)
+                    local hitByVehicle = vehicle ~= 0 and dist < 2.5 and GetEntitySpeed(vehicle) > 3.0
+                    
+                    if damaged or vehicleDamage or hitByVehicle then
+                        ClearEntityLastDamageEntity(ped)
+                        if vehicle ~= 0 then ClearEntityLastDamageEntity(vehicle) end
+                        MakePedAggressive(ped, playerPed)
+                    end
                 end
             end
+            found, ped = FindNextPed(handle)
         end
-    end
-end
-
-local function CleanupDeadPeds()
-    for ped, _ in pairs(aggroPeds) do
-        if not DoesEntityExist(ped) or IsPedDeadOrDying(ped) then
-            aggroPeds[ped] = nil
-        end
-    end
-end
-
-CreateThread(function()
-    SetRelationshipBetweenGroups(5, `HATES_PLAYER`, `PLAYER`)
-    SetRelationshipBetweenGroups(5, `PLAYER`, `HATES_PLAYER`)
-    
-    while true do
-        Wait(500)
-        CheckPedDamage()
+        EndFindPed(handle)
     end
 end)
 
-CreateThread(function()
+Citizen.CreateThread(function()
     while true do
-        Wait(10000)
-        CleanupDeadPeds()
-    end
-end)
-
-CreateThread(function()
-    while true do
-        Wait(0)
+        Citizen.Wait(50)
         for ped, _ in pairs(aggroPeds) do
             if DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
                 local health = GetEntityHealth(ped)
-                if health < 150 and health > 0 then
-                    SetEntityHealth(ped, 150)
+                if health < 200 and health > 0 then
+                    SetEntityHealth(ped, 200)
                 end
+                
+                local target = PlayerPedId()
+                if not IsPedInCombat(ped) then
+                    TaskCombatPed(ped, target, 0, 16)
+                end
+            else
+                aggroPeds[ped] = nil
             end
         end
-        Wait(100)
     end
 end)
+
+RegisterCommand('testnpc', function()
+    local playerPed = PlayerPedId()
+    local coords = GetEntityCoords(playerPed)
+    local fwd = GetEntityForwardVector(playerPed)
+    local spawnCoords = coords + fwd * 3.0
+    
+    local model = GetHashKey("a_m_m_business_01")
+    RequestModel(model)
+    while not HasModelLoaded(model) do Citizen.Wait(10) end
+    
+    local ped = CreatePed(4, model, spawnCoords.x, spawnCoords.y, spawnCoords.z, 0.0, true, false)
+    SetModelAsNoLongerNeeded(model)
+    
+    Citizen.Wait(500)
+    MakePedAggressive(ped, playerPed)
+    
+    print("[NPC AGGRO] ^2Test NPC spawned dan marah!^7")
+end, false)
 
 RegisterCommand('npcaggro', function()
     local count = 0
     for _ in pairs(aggroPeds) do count = count + 1 end
-    TriggerEvent('chat:addMessage', {
-        color = {255, 100, 100},
-        args = {'[NPC AGGRO]', ('NPC agresif aktif: %d'):format(count)}
-    })
-end, false)
-
-RegisterCommand('policetoggle', function()
-    policeDispatchEnabled = not policeDispatchEnabled
-    TriggerEvent('chat:addMessage', {
-        color = {100, 150, 255},
-        args = {'[POLICE]', policeDispatchEnabled and 'Polisi AKTIF' or 'Polisi NONAKTIF'}
-    })
+    print("[NPC AGGRO] NPC agresif aktif: " .. count)
 end, false)
