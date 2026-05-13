@@ -25,11 +25,6 @@ local function SetPedBrave(ped)
     SetPedFleeAttributes(ped, 0, false)
     SetPedConfigFlag(ped, 2, false)
     SetPedConfigFlag(ped, 17, false)
-    SetPedConfigFlag(ped, 46, true)
-    SetPedConfigFlag(ped, 128, true)
-    SetPedConfigFlag(ped, 188, true)
-    SetPedConfigFlag(ped, 281, true)
-    SetPedConfigFlag(ped, 292, true)
 end
 
 local function ArmPed(ped)
@@ -55,11 +50,13 @@ local function MakePedAggro(ped, target)
     
     aggroPeds[ped] = true
     
+    SetEntityVisible(ped, true, false)
+    SetEntityInvincible(ped, false)
+    SetEntityProofs(ped, false, true, true, false, false, false, false, false)
+    
     if IsPedInAnyVehicle(ped, false) then
         TaskLeaveVehicle(ped, GetVehiclePedIsIn(ped, false), 4160)
     end
-    
-    ClearPedTasks(ped)
     
     SetPedBrave(ped)
     
@@ -67,18 +64,16 @@ local function MakePedAggro(ped, target)
         ArmPed(ped)
     end
     
+    SetEntityHealth(ped, 500)
+    SetPedArmour(ped, 200)
+    
     SetPedRelationshipGroupHash(ped, CHAOS_GROUP)
     
     SetPedCombatAttributes(ped, 0, true)
-    SetPedCombatAttributes(ped, 1, true)
-    SetPedCombatAttributes(ped, 2, true)
-    SetPedCombatAttributes(ped, 5, true)
     SetPedCombatAttributes(ped, 46, true)
-    SetPedCombatAttributes(ped, 52, true)
     SetPedCombatAbility(ped, 2)
     SetPedCombatMovement(ped, 2)
     SetPedCombatRange(ped, 2)
-    SetPedAccuracy(ped, 70)
     
     TaskCombatPed(ped, target, 0, 16)
 end
@@ -137,11 +132,22 @@ Citizen.CreateThread(function()
             if ped ~= 0 and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) then
                 local dist = #(pCoords - GetEntityCoords(ped))
                 
+                SetEntityVisible(ped, true, false)
+                SetEntityAlpha(ped, 255, false)
+                ResetEntityAlpha(ped)
+                
+                local veh = GetVehiclePedIsIn(ped, false)
+                if veh ~= 0 then
+                    SetEntityVisible(veh, true, false)
+                    SetEntityAlpha(veh, 255, false)
+                    ResetEntityAlpha(veh)
+                end
+                
                 if dist < 100.0 and not armedPeds[ped] and IsPedHuman(ped) then
                     ArmPed(ped)
                 end
                 
-                if dist < 25.0 and not aggroPeds[ped] then
+                if dist < 30.0 and not aggroPeds[ped] then
                     local vehicle = GetVehiclePedIsIn(player, false)
                     local trigger = false
                     
@@ -154,6 +160,13 @@ Citizen.CreateThread(function()
                         trigger = true
                         ClearEntityLastDamageEntity(ped)
                         ClearEntityLastDamageEntity(vehicle)
+                    end
+                    
+                    if IsPlayerFreeAiming(PlayerId()) then
+                        local _, targetPed = GetEntityPlayerIsFreeAimingAt(PlayerId())
+                        if targetPed == ped then
+                            trigger = true
+                        end
                     end
                     
                     if trigger then
