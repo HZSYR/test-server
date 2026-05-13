@@ -1,147 +1,257 @@
+local armedPeds = {}
 local aggroPeds = {}
+local CHAOS_GROUP = nil
 
-local weaponList = {
-    "WEAPON_PISTOL", "WEAPON_COMBATPISTOL", "WEAPON_PISTOL50",
-    "WEAPON_MICROSMG", "WEAPON_SMG", "WEAPON_ASSAULTSMG",
-    "WEAPON_ASSAULTRIFLE", "WEAPON_CARBINERIFLE", "WEAPON_COMPACTRIFLE",
-    "WEAPON_PUMPSHOTGUN", "WEAPON_SAWNOFFSHOTGUN",
-    "WEAPON_BAT", "WEAPON_CROWBAR", "WEAPON_KNIFE", "WEAPON_MACHETE"
+local weapons = {
+    0x1B06D571, 0x5EF9FEC4, 0x22D8FE39, 0xD205520E,
+    0x13532244, 0x2BE6766B, 0xEFE7E2DF, 0xBD248B55,
+    0xBFEFFF6D, 0x83BF0278, 0x0C472FE2, 0x969C3D67,
+    0x1D073A89, 0x7FD62962, 0xE284C527
 }
 
-local function GiveRandomWeapon(ped)
-    local weaponName = weaponList[math.random(#weaponList)]
-    local weaponHash = GetHashKey(weaponName)
-    GiveWeaponToPed(ped, weaponHash, 9999, false, true)
-    SetCurrentPedWeapon(ped, weaponHash, true)
-    return weaponName
-end
+Citizen.CreateThread(function()
+    AddRelationshipGroup("CHAOS_GROUP")
+    CHAOS_GROUP = GetHashKey("CHAOS_GROUP")
+    SetRelationshipBetweenGroups(5, CHAOS_GROUP, GetHashKey("PLAYER"))
+    SetRelationshipBetweenGroups(5, GetHashKey("PLAYER"), CHAOS_GROUP)
+    SetRelationshipBetweenGroups(5, CHAOS_GROUP, CHAOS_GROUP)
+end)
 
-local function MakePedAggro(ped)
+local function ArmPed(ped)
+    if armedPeds[ped] then return end
     if not DoesEntityExist(ped) then return end
     if IsPedAPlayer(ped) then return end
-    if aggroPeds[ped] then return end
     
-    local playerPed = PlayerPedId()
+    armedPeds[ped] = true
+    
+    local weapon = weapons[math.random(#weapons)]
+    GiveWeaponToPed(ped, weapon, 9999, false, true)
+    SetCurrentPedWeapon(ped, weapon, true)
+    SetPedInfiniteAmmo(ped, true, weapon)
+end
+
+local function MakePedAggro(ped, target)
+    if aggroPeds[ped] then return end
+    if not DoesEntityExist(ped) then return end
+    if IsPedAPlayer(ped) then return end
+    if IsPedDeadOrDying(ped) then return end
+    
     aggroPeds[ped] = true
     
     if IsPedInAnyVehicle(ped, false) then
-        local veh = GetVehiclePedIsIn(ped, false)
-        TaskLeaveVehicle(ped, veh, 256)
-        Wait(800)
+        TaskLeaveVehicle(ped, GetVehiclePedIsIn(ped, false), 4160)
     end
     
     ClearPedTasksImmediately(ped)
     
-    SetPedMaxHealth(ped, 300)
-    SetEntityHealth(ped, 300)
-    SetPedArmour(ped, 50)
-    SetPedCanRagdoll(ped, false)
+    if not armedPeds[ped] then
+        ArmPed(ped)
+    end
     
-    local weapon = GiveRandomWeapon(ped)
-    print("[NPC AGGRO] ^1NPC MARAH!^7 Senjata: " .. weapon)
+    SetPedRelationshipGroupHash(ped, CHAOS_GROUP)
+    SetPedAsEnemy(ped, true)
+    
+    SetEntityHealth(ped, 300)
+    SetPedArmour(ped, 100)
+    SetPedCanRagdoll(ped, false)
     
     SetBlockingOfNonTemporaryEvents(ped, true)
     SetPedFleeAttributes(ped, 0, false)
+    SetPedConfigFlag(ped, 2, false)
+    SetPedConfigFlag(ped, 281, true)
+    SetPedConfigFlag(ped, 292, true)
     
     SetPedCombatAttributes(ped, 0, true)
     SetPedCombatAttributes(ped, 1, true)
     SetPedCombatAttributes(ped, 2, true)
-    SetPedCombatAttributes(ped, 3, true)
-    SetPedCombatAttributes(ped, 5, true)
-    SetPedCombatAttributes(ped, 17, false)
     SetPedCombatAttributes(ped, 46, true)
-    SetPedCombatAttributes(ped, 52, true)
-    
-    SetPedCombatAbility(ped, 2)
+    SetPedCombatAbility(ped, 100)
     SetPedCombatMovement(ped, 2)
     SetPedCombatRange(ped, 2)
-    SetPedAccuracy(ped, 50)
-    SetPedSeeingRange(ped, 100.0)
-    SetPedHearingRange(ped, 100.0)
-    SetPedAlertness(ped, 3)
+    SetPedAccuracy(ped, 80)
+    SetPedHearingRange(ped, 200.0)
     
-    local relGroup = GetHashKey("HATES_PLAYER")
-    SetPedRelationshipGroupHash(ped, relGroup)
-    SetRelationshipBetweenGroups(5, relGroup, GetHashKey("PLAYER"))
-    
-    TaskCombatPed(ped, playerPed, 0, 16)
+    TaskCombatPed(ped, target, 0, 16)
     SetPedKeepTask(ped, true)
+end
+
+local function TriggerChaos(sourceCoords, radius)
+    local handle, ped = FindFirstPed()
+    local success = true
+    local player = PlayerPedId()
     
-    SetPlayerWantedLevel(PlayerId(), 1, false)
-    SetPlayerWantedLevelNow(PlayerId(), false)
+    while success do
+        if ped ~= 0 and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) and not aggroPeds[ped] then
+            local dist = #(sourceCoords - GetEntityCoords(ped))
+            if dist < radius then
+                local targets = {}
+                local h2, p2 = FindFirstPed()
+                local s2 = true
+                while s2 do
+                    if p2 ~= 0 and p2 ~= ped and not IsPedDeadOrDying(p2) then
+                        local d2 = #(GetEntityCoords(ped) - GetEntityCoords(p2))
+                        if d2 < 50.0 then
+                            table.insert(targets, p2)
+                        end
+                    end
+                    s2, p2 = FindNextPed(h2)
+                end
+                EndFindPed(h2)
+                
+                if #targets > 0 then
+                    local randomTarget = targets[math.random(#targets)]
+                    MakePedAggro(ped, randomTarget)
+                else
+                    MakePedAggro(ped, player)
+                end
+            end
+        end
+        success, ped = FindNextPed(handle)
+    end
+    EndFindPed(handle)
 end
 
 Citizen.CreateThread(function()
-    print("^2==========================================^7")
-    print("^2   NPC AGGRO SYSTEM - AKTIF!             ^7")
-    print("^3   Pukul atau tabrak NPC = NPC MARAH!    ^7")
-    print("^2==========================================^7")
+    print("^1==========================================^7")
+    print("^1   CHAOS MODE - SEMUA NPC BERSENJATA!    ^7")
+    print("^1==========================================^7")
     
-    local relGroup = GetHashKey("HATES_PLAYER")
-    AddRelationshipGroup("HATES_PLAYER")
-    SetRelationshipBetweenGroups(5, relGroup, GetHashKey("PLAYER"))
-    SetRelationshipBetweenGroups(5, GetHashKey("PLAYER"), relGroup)
+    while true do
+        Wait(0)
+        
+        local player = PlayerPedId()
+        local pCoords = GetEntityCoords(player)
+        
+        local handle, ped = FindFirstPed()
+        local success = true
+        
+        while success do
+            if ped ~= 0 and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) then
+                local dist = #(pCoords - GetEntityCoords(ped))
+                
+                if dist < 100.0 and not armedPeds[ped] then
+                    ArmPed(ped)
+                end
+                
+                if dist < 25.0 and not aggroPeds[ped] then
+                    local vehicle = GetVehiclePedIsIn(player, false)
+                    local trigger = false
+                    
+                    if HasEntityBeenDamagedByEntity(ped, player, true) then
+                        trigger = true
+                        ClearEntityLastDamageEntity(ped)
+                    end
+                    
+                    if vehicle ~= 0 and HasEntityBeenDamagedByEntity(ped, vehicle, true) then
+                        trigger = true
+                        ClearEntityLastDamageEntity(ped)
+                        ClearEntityLastDamageEntity(vehicle)
+                    end
+                    
+                    if trigger then
+                        MakePedAggro(ped, player)
+                        TriggerChaos(GetEntityCoords(ped), 50.0)
+                    end
+                end
+            end
+            success, ped = FindNextPed(handle)
+        end
+        EndFindPed(handle)
+    end
+end)
+
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+        
+        local handle, ped = FindFirstPed()
+        local success = true
+        
+        while success do
+            if ped ~= 0 and DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
+                if IsPedShooting(ped) then
+                    local shooterCoords = GetEntityCoords(ped)
+                    
+                    local h2, nearby = FindFirstPed()
+                    local s2 = true
+                    while s2 do
+                        if nearby ~= 0 and nearby ~= ped and not IsPedDeadOrDying(nearby) and not aggroPeds[nearby] then
+                            local dist = #(shooterCoords - GetEntityCoords(nearby))
+                            if dist < 80.0 then
+                                MakePedAggro(nearby, ped)
+                            end
+                        end
+                        s2, nearby = FindNextPed(h2)
+                    end
+                    EndFindPed(h2)
+                end
+            end
+            success, ped = FindNextPed(handle)
+        end
+        EndFindPed(handle)
+    end
 end)
 
 Citizen.CreateThread(function()
     while true do
         Wait(50)
         
-        local playerPed = PlayerPedId()
-        local playerCoords = GetEntityCoords(playerPed)
-        local vehicle = GetVehiclePedIsIn(playerPed, false)
-        
-        for ped in EnumeratePeds() do
-            if DoesEntityExist(ped) and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) and not aggroPeds[ped] then
-                local dist = #(playerCoords - GetEntityCoords(ped))
-                
-                if dist < 25.0 then
-                    local isDamaged = HasEntityBeenDamagedByEntity(ped, playerPed, true)
-                    local isVehicleDamage = vehicle ~= 0 and HasEntityBeenDamagedByEntity(ped, vehicle, true)
-                    
-                    if isDamaged or isVehicleDamage then
-                        ClearEntityLastDamageEntity(ped)
-                        if vehicle ~= 0 then ClearEntityLastDamageEntity(vehicle) end
-                        MakePedAggro(ped)
-                    end
-                end
-            end
-        end
-    end
-end)
-
-Citizen.CreateThread(function()
-    while true do
-        Wait(100)
-        local playerPed = PlayerPedId()
-        
-        for ped, _ in pairs(aggroPeds) do
+        for ped in pairs(aggroPeds) do
             if DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
                 if GetEntityHealth(ped) < 150 then
                     SetEntityHealth(ped, 150)
                 end
-                
                 if not IsPedInCombat(ped) then
-                    TaskCombatPed(ped, playerPed, 0, 16)
+                    local handle, target = FindFirstPed()
+                    local success = true
+                    local closest = nil
+                    local closestDist = 999.0
+                    
+                    while success do
+                        if target ~= 0 and target ~= ped and not IsPedDeadOrDying(target) then
+                            local d = #(GetEntityCoords(ped) - GetEntityCoords(target))
+                            if d < closestDist then
+                                closestDist = d
+                                closest = target
+                            end
+                        end
+                        success, target = FindNextPed(handle)
+                    end
+                    EndFindPed(handle)
+                    
+                    if closest then
+                        TaskCombatPed(ped, closest, 0, 16)
+                    end
                 end
             else
                 aggroPeds[ped] = nil
+                armedPeds[ped] = nil
             end
         end
     end
 end)
 
-function EnumeratePeds()
-    return coroutine.wrap(function()
-        local handle, ped = FindFirstPed()
-        local success
-        repeat
-            if ped ~= 0 then coroutine.yield(ped) end
-            success, ped = FindNextPed(handle)
-        until not success
-        EndFindPed(handle)
-    end)
-end
+RegisterCommand('forceaggro', function()
+    local playerPed = PlayerPedId()
+    local playerCoords = GetEntityCoords(playerPed)
+    local count = 0
+    
+    local handle, ped = FindFirstPed()
+    local found = true
+    while found do
+        if ped and DoesEntityExist(ped) and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) then
+            local dist = #(playerCoords - GetEntityCoords(ped))
+            if dist < 20.0 and not aggroPeds[ped] then
+                Citizen.CreateThread(function() MakePedAggro(ped) end)
+                count = count + 1
+            end
+        end
+        found, ped = FindNextPed(handle)
+    end
+    EndFindPed(handle)
+    
+    print("[NPC AGGRO] ^1Forced " .. count .. " NPCs to aggro!^7")
+end, false)
 
 RegisterCommand('testnpc', function()
     local playerPed = PlayerPedId()

@@ -10,10 +10,10 @@
         
         .speedo {
             position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 200px;
-            height: 200px;
+            bottom: 150px;
+            right: 40px;
+            width: 320px;
+            height: 320px;
             display: none;
         }
         .speedo.show { display: block; animation: fadeIn 0.3s ease; }
@@ -21,8 +21,8 @@
         
         .gauge {
             position: relative;
-            width: 200px;
-            height: 200px;
+            width: 320px;
+            height: 320px;
         }
         
         .gauge-bg {
@@ -40,16 +40,16 @@
         
         .gauge-ring {
             position: absolute;
-            top: 10px; left: 10px;
-            width: 180px; height: 180px;
+            top: 20px; left: 20px;
+            width: 280px; height: 280px;
             border-radius: 50%;
             border: 2px solid rgba(255, 255, 255, 0.05);
         }
         
         .speed-arc {
             position: absolute;
-            top: 15px; left: 15px;
-            width: 170px; height: 170px;
+            top: 25px; left: 25px;
+            width: 270px; height: 270px;
         }
         
         .speed-arc svg {
@@ -83,7 +83,7 @@
         }
         
         .speed-num {
-            font-size: 48px;
+            font-size: 80px;
             font-weight: 900;
             color: #fff;
             text-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
@@ -91,10 +91,10 @@
         }
         
         .speed-unit {
-            font-size: 12px;
+            font-size: 20px;
             color: rgba(255, 255, 255, 0.5);
             letter-spacing: 3px;
-            margin-top: 2px;
+            margin-top: 4px;
         }
         
         .gear-box {
@@ -162,7 +162,7 @@
         .needle {
             position: absolute;
             top: 50%; left: 50%;
-            width: 4px; height: 70px;
+            width: 6px; height: 120px;
             background: linear-gradient(to top, #ff4444, #ff6b6b);
             transform-origin: bottom center;
             transform: translate(-50%, -100%) rotate(-135deg);
@@ -185,13 +185,13 @@
         .ticks {
             position: absolute;
             top: 50%; left: 50%;
-            width: 180px; height: 180px;
+            width: 280px; height: 280px;
             transform: translate(-50%, -50%);
         }
         
         .tick {
             position: absolute;
-            font-size: 9px;
+            font-size: 14px;
             color: rgba(255, 255, 255, 0.6);
             font-weight: 700;
         }
@@ -204,7 +204,7 @@
             <div class="gauge-ring"></div>
             
             <div class="speed-arc">
-                <svg viewBox="0 0 170 170">
+                <svg viewBox="0 0 270 270">
                     <defs>
                         <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                             <stop offset="0%" style="stop-color:#00ff88"/>
@@ -212,8 +212,8 @@
                             <stop offset="100%" style="stop-color:#ff4444"/>
                         </linearGradient>
                     </defs>
-                    <circle class="arc-bg" cx="85" cy="85" r="60"/>
-                    <circle class="arc-fill" id="arcFill" cx="85" cy="85" r="60"/>
+                    <circle class="arc-bg" cx="135" cy="135" r="105"/>
+                    <circle class="arc-fill" id="arcFill" cx="135" cy="135" r="105"/>
                 </svg>
             </div>
             
