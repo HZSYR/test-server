@@ -3,284 +3,311 @@
 <head>
     <meta charset="UTF-8">
     <title>Speedometer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Orbitron', 'Segoe UI', sans-serif;
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: transparent; overflow: hidden; font-family: 'Orbitron', sans-serif; }
         
-        body {
-            background: transparent;
-            overflow: hidden;
-        }
-        
-        .speedometer {
+        .speedo {
             position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 280px;
-            height: 180px;
-            background: linear-gradient(145deg, rgba(15, 15, 25, 0.95), rgba(25, 25, 40, 0.9));
-            border-radius: 20px;
-            padding: 20px;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
             display: none;
-            border: 2px solid rgba(0, 200, 255, 0.3);
+        }
+        .speedo.show { display: block; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        
+        .gauge {
+            position: relative;
+            width: 200px;
+            height: 200px;
+        }
+        
+        .gauge-bg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(40, 40, 50, 0.95), rgba(15, 15, 20, 0.98));
             box-shadow: 
-                0 10px 40px rgba(0, 0, 0, 0.5),
-                0 0 30px rgba(0, 200, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                0 0 30px rgba(0, 0, 0, 0.8),
+                inset 0 0 50px rgba(0, 0, 0, 0.5),
+                0 0 2px rgba(255, 255, 255, 0.1);
+            border: 3px solid rgba(60, 60, 70, 0.8);
         }
         
-        .speedometer.show {
-            display: block;
-            animation: slideIn 0.3s ease;
+        .gauge-ring {
+            position: absolute;
+            top: 10px; left: 10px;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.05);
         }
         
-        @keyframes slideIn {
-            from { transform: translateX(100px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .speed-arc {
+            position: absolute;
+            top: 15px; left: 15px;
+            width: 170px; height: 170px;
         }
         
-        .speed-display {
+        .speed-arc svg {
+            width: 100%; height: 100%;
+            transform: rotate(-225deg);
+        }
+        
+        .arc-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
+        
+        .arc-fill {
+            fill: none;
+            stroke: url(#speedGradient);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 377;
+            stroke-dashoffset: 377;
+            transition: stroke-dashoffset 0.15s ease;
+            filter: drop-shadow(0 0 6px rgba(0, 255, 150, 0.6));
+        }
+        
+        .center-display {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
-            margin-bottom: 15px;
         }
         
-        .speed-value {
-            font-size: 56px;
+        .speed-num {
+            font-size: 48px;
             font-weight: 900;
             color: #fff;
-            text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
+            text-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
             line-height: 1;
         }
         
         .speed-unit {
-            font-size: 16px;
-            color: rgba(255, 255, 255, 0.6);
-            margin-left: 5px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 3px;
+            margin-top: 2px;
         }
         
-        .gear-display {
+        .gear-box {
             position: absolute;
-            top: 20px;
-            right: 25px;
-            width: 45px;
-            height: 45px;
-            background: linear-gradient(145deg, #1a1a2e, #16213e);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid rgba(255, 100, 100, 0.5);
-            box-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
+            bottom: 35px; left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 100, 100, 0.4);
         }
         
-        .gear-value {
-            font-size: 24px;
+        .gear-num {
+            font-size: 18px;
             font-weight: 700;
             color: #ff6b6b;
         }
         
-        .rpm-container {
-            margin-bottom: 12px;
-        }
-        
-        .rpm-bar {
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .rpm-fill {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #00ff88, #ffff00, #ff4444);
-            border-radius: 4px;
-            transition: width 0.1s ease;
-            box-shadow: 0 0 10px currentColor;
-        }
-        
-        .rpm-label {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .stats-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-        }
-        
-        .stat-item {
-            flex: 1;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
-            padding: 8px;
-            text-align: center;
-        }
-        
-        .stat-icon {
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-        
-        .stat-value {
-            font-size: 14px;
-            font-weight: 700;
-            color: #fff;
-        }
-        
-        .stat-bar {
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            margin-top: 4px;
-            overflow: hidden;
-        }
-        
-        .stat-fill {
-            height: 100%;
-            border-radius: 2px;
-            transition: width 0.3s ease;
-        }
-        
-        .health-fill {
-            background: linear-gradient(90deg, #ff4444, #ffaa00, #00ff88);
-        }
-        
-        .fuel-fill {
-            background: linear-gradient(90deg, #ff4444, #ffaa00, #00aaff);
-        }
-        
-        .vehicle-type {
+        .rpm-dots {
             position: absolute;
-            top: 20px;
-            left: 25px;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            top: 50%; left: 50%;
+            width: 160px; height: 160px;
+            transform: translate(-50%, -50%);
+        }
+        
+        .rpm-dot {
+            position: absolute;
+            width: 4px; height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            transform-origin: 80px 80px;
+        }
+        
+        .rpm-dot.active { background: #00ff88; box-shadow: 0 0 8px #00ff88; }
+        .rpm-dot.warning { background: #ffaa00; box-shadow: 0 0 8px #ffaa00; }
+        .rpm-dot.danger { background: #ff4444; box-shadow: 0 0 8px #ff4444; }
+        
+        .info-bar {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            background: rgba(20, 20, 30, 0.9);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .info-icon { font-size: 12px; }
+        .info-val { font-weight: 700; color: #fff; }
+        .info-val.low { color: #ff6b6b; }
+        .info-val.mid { color: #ffaa00; }
+        .info-val.high { color: #00ff88; }
+        
+        .needle {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 4px; height: 70px;
+            background: linear-gradient(to top, #ff4444, #ff6b6b);
+            transform-origin: bottom center;
+            transform: translate(-50%, -100%) rotate(-135deg);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
+            transition: transform 0.15s ease;
+        }
+        
+        .needle::after {
+            content: '';
+            position: absolute;
+            bottom: -8px; left: 50%;
+            transform: translateX(-50%);
+            width: 16px; height: 16px;
+            background: radial-gradient(circle, #333, #111);
+            border-radius: 50%;
+            border: 2px solid #444;
+        }
+        
+        .ticks {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 180px; height: 180px;
+            transform: translate(-50%, -50%);
+        }
+        
+        .tick {
+            position: absolute;
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 700;
         }
     </style>
 </head>
 <body>
-    <div class="speedometer" id="speedometer">
-        <div class="vehicle-type" id="vehicleType">MOBIL</div>
-        
-        <div class="gear-display">
-            <span class="gear-value" id="gear">N</span>
+    <div class="speedo" id="speedo">
+        <div class="gauge">
+            <div class="gauge-bg"></div>
+            <div class="gauge-ring"></div>
+            
+            <div class="speed-arc">
+                <svg viewBox="0 0 170 170">
+                    <defs>
+                        <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#00ff88"/>
+                            <stop offset="50%" style="stop-color:#ffff00"/>
+                            <stop offset="100%" style="stop-color:#ff4444"/>
+                        </linearGradient>
+                    </defs>
+                    <circle class="arc-bg" cx="85" cy="85" r="60"/>
+                    <circle class="arc-fill" id="arcFill" cx="85" cy="85" r="60"/>
+                </svg>
+            </div>
+            
+            <div class="ticks">
+                <span class="tick" style="top: 85%; left: 10%;">0</span>
+                <span class="tick" style="top: 40%; left: 2%;">60</span>
+                <span class="tick" style="top: 5%; left: 25%;">120</span>
+                <span class="tick" style="top: 5%; right: 25%;">180</span>
+                <span class="tick" style="top: 40%; right: 2%;">240</span>
+                <span class="tick" style="top: 85%; right: 10%;">300</span>
+            </div>
+            
+            <div class="needle" id="needle"></div>
+            
+            <div class="center-display">
+                <div class="speed-num" id="speed">0</div>
+                <div class="speed-unit">KM/H</div>
+            </div>
+            
+            <div class="gear-box">
+                <span class="gear-num" id="gear">N</span>
+            </div>
         </div>
         
-        <div class="speed-display">
-            <span class="speed-value" id="speed">0</span>
-            <span class="speed-unit">KM/H</span>
-        </div>
-        
-        <div class="rpm-container">
-            <div class="rpm-label">
-                <span>RPM</span>
-                <span id="rpmPercent">0%</span>
+        <div class="info-bar">
+            <div class="info-item">
+                <span class="info-icon">🔧</span>
+                <span class="info-val high" id="health">100</span>
             </div>
-            <div class="rpm-bar">
-                <div class="rpm-fill" id="rpmFill"></div>
+            <div class="info-item">
+                <span class="info-icon">⛽</span>
+                <span class="info-val high" id="fuel">100</span>
             </div>
-        </div>
-        
-        <div class="stats-row">
-            <div class="stat-item">
-                <div class="stat-icon">🔧</div>
-                <div class="stat-value" id="health">100%</div>
-                <div class="stat-bar">
-                    <div class="stat-fill health-fill" id="healthFill" style="width: 100%"></div>
-                </div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-icon">⛽</div>
-                <div class="stat-value" id="fuel">100%</div>
-                <div class="stat-bar">
-                    <div class="stat-fill fuel-fill" id="fuelFill" style="width: 100%"></div>
-                </div>
+            <div class="info-item">
+                <span class="info-icon">🔄</span>
+                <span class="info-val" id="rpm">0</span>
             </div>
         </div>
     </div>
 
     <script>
-        const speedometer = document.getElementById('speedometer');
+        const speedo = document.getElementById('speedo');
         const speedEl = document.getElementById('speed');
         const gearEl = document.getElementById('gear');
-        const rpmFill = document.getElementById('rpmFill');
-        const rpmPercent = document.getElementById('rpmPercent');
         const healthEl = document.getElementById('health');
-        const healthFill = document.getElementById('healthFill');
         const fuelEl = document.getElementById('fuel');
-        const fuelFill = document.getElementById('fuelFill');
-        const vehicleType = document.getElementById('vehicleType');
+        const rpmEl = document.getElementById('rpm');
+        const needle = document.getElementById('needle');
+        const arcFill = document.getElementById('arcFill');
+        
+        const maxSpeed = 300;
+        const arcLength = 377 * 0.75;
 
         window.addEventListener('message', function(event) {
-            const data = event.data;
+            const d = event.data;
             
-            if (data.action === 'show') {
-                speedometer.classList.add('show');
-            }
+            if (d.action === 'show') speedo.classList.add('show');
+            if (d.action === 'hide') speedo.classList.remove('show');
             
-            if (data.action === 'hide') {
-                speedometer.classList.remove('show');
-            }
-            
-            if (data.action === 'update') {
-                speedEl.textContent = data.speed;
+            if (d.action === 'update') {
+                speedEl.textContent = d.speed;
                 
-                if (data.gear === 0) {
-                    gearEl.textContent = 'R';
-                    gearEl.style.color = '#ff6b6b';
-                } else {
-                    gearEl.textContent = data.gear;
-                    gearEl.style.color = data.rpm > 0.8 ? '#ff6b6b' : '#00ff88';
-                }
+                // Needle rotation (-135 to 135 degrees, 270 degree sweep)
+                const speedPercent = Math.min(d.speed / maxSpeed, 1);
+                const rotation = -135 + (speedPercent * 270);
+                needle.style.transform = `translate(-50%, -100%) rotate(${rotation}deg)`;
                 
-                const rpmWidth = Math.min(data.rpm * 100, 100);
-                rpmFill.style.width = rpmWidth + '%';
-                rpmPercent.textContent = Math.floor(rpmWidth) + '%';
+                // Arc fill
+                const arcOffset = arcLength - (speedPercent * arcLength);
+                arcFill.style.strokeDashoffset = arcOffset;
                 
-                if (data.rpm > 0.9) {
-                    rpmFill.style.boxShadow = '0 0 20px #ff4444';
-                } else {
-                    rpmFill.style.boxShadow = '0 0 10px currentColor';
-                }
+                // Gear
+                gearEl.textContent = d.gear === 0 ? 'R' : d.gear;
+                gearEl.style.color = d.gear === 0 ? '#ff6b6b' : (d.rpm > 0.85 ? '#ffaa00' : '#00ff88');
                 
-                healthEl.textContent = data.health + '%';
-                healthFill.style.width = data.health + '%';
+                // Health
+                healthEl.textContent = d.health;
+                healthEl.className = 'info-val ' + (d.health > 60 ? 'high' : d.health > 30 ? 'mid' : 'low');
                 
-                fuelEl.textContent = data.fuel + '%';
-                fuelFill.style.width = data.fuel + '%';
+                // Fuel
+                fuelEl.textContent = d.fuel;
+                fuelEl.className = 'info-val ' + (d.fuel > 40 ? 'high' : d.fuel > 15 ? 'mid' : 'low');
                 
-                if (data.isBike) {
-                    vehicleType.textContent = 'MOTOR';
-                } else if (data.isBoat) {
-                    vehicleType.textContent = 'KAPAL';
-                } else if (data.isPlane) {
-                    vehicleType.textContent = 'PESAWAT';
-                } else {
-                    vehicleType.textContent = 'MOBIL';
-                }
+                // RPM
+                rpmEl.textContent = Math.floor(d.rpm * 100);
+                rpmEl.className = 'info-val ' + (d.rpm > 0.85 ? 'low' : d.rpm > 0.6 ? 'mid' : 'high');
                 
-                if (data.speed > 150) {
+                // Speed color
+                if (d.speed > 200) {
                     speedEl.style.color = '#ff4444';
-                    speedEl.style.textShadow = '0 0 30px rgba(255, 68, 68, 0.8)';
-                } else if (data.speed > 100) {
+                } else if (d.speed > 120) {
                     speedEl.style.color = '#ffaa00';
-                    speedEl.style.textShadow = '0 0 25px rgba(255, 170, 0, 0.8)';
                 } else {
                     speedEl.style.color = '#fff';
-                    speedEl.style.textShadow = '0 0 20px rgba(0, 200, 255, 0.8)';
                 }
             }
         });

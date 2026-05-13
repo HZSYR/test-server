@@ -1,113 +1,128 @@
 local aggroPeds = {}
-local policeDispatchEnabled = true
 
-local function MakePedAggressive(ped, target)
+local weaponList = {
+    "WEAPON_PISTOL", "WEAPON_COMBATPISTOL", "WEAPON_PISTOL50",
+    "WEAPON_MICROSMG", "WEAPON_SMG", "WEAPON_ASSAULTSMG",
+    "WEAPON_ASSAULTRIFLE", "WEAPON_CARBINERIFLE", "WEAPON_COMPACTRIFLE",
+    "WEAPON_PUMPSHOTGUN", "WEAPON_SAWNOFFSHOTGUN",
+    "WEAPON_BAT", "WEAPON_CROWBAR", "WEAPON_KNIFE", "WEAPON_MACHETE"
+}
+
+local function GiveRandomWeapon(ped)
+    local weaponName = weaponList[math.random(#weaponList)]
+    local weaponHash = GetHashKey(weaponName)
+    GiveWeaponToPed(ped, weaponHash, 9999, false, true)
+    SetCurrentPedWeapon(ped, weaponHash, true)
+    return weaponName
+end
+
+local function MakePedAggro(ped)
     if not DoesEntityExist(ped) then return end
     if IsPedAPlayer(ped) then return end
     if aggroPeds[ped] then return end
     
+    local playerPed = PlayerPedId()
     aggroPeds[ped] = true
-    print("[NPC AGGRO] ^1NPC MARAH: " .. ped .. "^7")
     
     if IsPedInAnyVehicle(ped, false) then
-        TaskLeaveVehicle(ped, GetVehiclePedIsIn(ped, false), 256)
-        Citizen.Wait(500)
+        local veh = GetVehiclePedIsIn(ped, false)
+        TaskLeaveVehicle(ped, veh, 256)
+        Wait(800)
     end
     
-    SetPedCanRagdoll(ped, false)
-    SetPedMaxHealth(ped, 500)
-    SetEntityHealth(ped, 500)
-    SetPedArmour(ped, 100)
-    
-    local weaponList = {
-        0x1B06D571, 0x5EF9FEC4, 0x22D8FE39,
-        0x13532244, 0x2BE6766B, 0xEFE7E2DF,
-        0xBFEFFF6D, 0x83BF0278, 0x0C472FE2,
-        0x1D073A89, 0x7FD62962,
-        0x958A4A8F, 0x84BD7BFD, 0x99B507EA, 0xDD5DF8D9
-    }
-    local weapon = weaponList[math.random(#weaponList)]
-    
-    GiveWeaponToPed(ped, weapon, 9999, false, true)
-    SetCurrentPedWeapon(ped, weapon, true)
-    SetPedInfiniteAmmo(ped, true, weapon)
-    
     ClearPedTasksImmediately(ped)
+    
+    SetPedMaxHealth(ped, 300)
+    SetEntityHealth(ped, 300)
+    SetPedArmour(ped, 50)
+    SetPedCanRagdoll(ped, false)
+    
+    local weapon = GiveRandomWeapon(ped)
+    print("[NPC AGGRO] ^1NPC MARAH!^7 Senjata: " .. weapon)
+    
     SetBlockingOfNonTemporaryEvents(ped, true)
     SetPedFleeAttributes(ped, 0, false)
+    
     SetPedCombatAttributes(ped, 0, true)
     SetPedCombatAttributes(ped, 1, true)
     SetPedCombatAttributes(ped, 2, true)
+    SetPedCombatAttributes(ped, 3, true)
+    SetPedCombatAttributes(ped, 5, true)
+    SetPedCombatAttributes(ped, 17, false)
     SetPedCombatAttributes(ped, 46, true)
+    SetPedCombatAttributes(ped, 52, true)
+    
     SetPedCombatAbility(ped, 2)
     SetPedCombatMovement(ped, 2)
     SetPedCombatRange(ped, 2)
-    SetPedAccuracy(ped, 70)
+    SetPedAccuracy(ped, 50)
     SetPedSeeingRange(ped, 100.0)
     SetPedHearingRange(ped, 100.0)
     SetPedAlertness(ped, 3)
     
-    local hash = GetHashKey("HATES_PLAYER")
-    SetPedRelationshipGroupHash(ped, hash)
+    local relGroup = GetHashKey("HATES_PLAYER")
+    SetPedRelationshipGroupHash(ped, relGroup)
+    SetRelationshipBetweenGroups(5, relGroup, GetHashKey("PLAYER"))
     
-    TaskCombatPed(ped, target, 0, 16)
+    TaskCombatPed(ped, playerPed, 0, 16)
     SetPedKeepTask(ped, true)
     
-    if policeDispatchEnabled then
-        SetPlayerWantedLevel(PlayerId(), 1, false)
-        SetPlayerWantedLevelNow(PlayerId(), false)
-    end
+    SetPlayerWantedLevel(PlayerId(), 1, false)
+    SetPlayerWantedLevelNow(PlayerId(), false)
 end
 
 Citizen.CreateThread(function()
-    print("[NPC AGGRO] ^2=== SISTEM NPC AGGRO AKTIF ===^7")
-    print("[NPC AGGRO] ^3Pukul atau tabrak NPC untuk memancing!^7")
+    print("^2==========================================^7")
+    print("^2   NPC AGGRO SYSTEM - AKTIF!             ^7")
+    print("^3   Pukul atau tabrak NPC = NPC MARAH!    ^7")
+    print("^2==========================================^7")
     
+    local relGroup = GetHashKey("HATES_PLAYER")
+    AddRelationshipGroup("HATES_PLAYER")
+    SetRelationshipBetweenGroups(5, relGroup, GetHashKey("PLAYER"))
+    SetRelationshipBetweenGroups(5, GetHashKey("PLAYER"), relGroup)
+end)
+
+Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(100)
+        Wait(50)
         
         local playerPed = PlayerPedId()
         local playerCoords = GetEntityCoords(playerPed)
         local vehicle = GetVehiclePedIsIn(playerPed, false)
         
-        local handle, ped = FindFirstPed()
-        local found = true
-        
-        while found do
+        for ped in EnumeratePeds() do
             if DoesEntityExist(ped) and not IsPedAPlayer(ped) and not IsPedDeadOrDying(ped) and not aggroPeds[ped] then
                 local dist = #(playerCoords - GetEntityCoords(ped))
                 
-                if dist < 30.0 then
-                    local damaged = HasEntityBeenDamagedByEntity(ped, playerPed, true)
-                    local vehicleDamage = vehicle ~= 0 and HasEntityBeenDamagedByEntity(ped, vehicle, true)
-                    local hitByVehicle = vehicle ~= 0 and dist < 2.5 and GetEntitySpeed(vehicle) > 3.0
+                if dist < 25.0 then
+                    local isDamaged = HasEntityBeenDamagedByEntity(ped, playerPed, true)
+                    local isVehicleDamage = vehicle ~= 0 and HasEntityBeenDamagedByEntity(ped, vehicle, true)
                     
-                    if damaged or vehicleDamage or hitByVehicle then
+                    if isDamaged or isVehicleDamage then
                         ClearEntityLastDamageEntity(ped)
                         if vehicle ~= 0 then ClearEntityLastDamageEntity(vehicle) end
-                        MakePedAggressive(ped, playerPed)
+                        MakePedAggro(ped)
                     end
                 end
             end
-            found, ped = FindNextPed(handle)
         end
-        EndFindPed(handle)
     end
 end)
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(50)
+        Wait(100)
+        local playerPed = PlayerPedId()
+        
         for ped, _ in pairs(aggroPeds) do
             if DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
-                local health = GetEntityHealth(ped)
-                if health < 200 and health > 0 then
-                    SetEntityHealth(ped, 200)
+                if GetEntityHealth(ped) < 150 then
+                    SetEntityHealth(ped, 150)
                 end
                 
-                local target = PlayerPedId()
                 if not IsPedInCombat(ped) then
-                    TaskCombatPed(ped, target, 0, 16)
+                    TaskCombatPed(ped, playerPed, 0, 16)
                 end
             else
                 aggroPeds[ped] = nil
@@ -116,27 +131,41 @@ Citizen.CreateThread(function()
     end
 end)
 
+function EnumeratePeds()
+    return coroutine.wrap(function()
+        local handle, ped = FindFirstPed()
+        local success
+        repeat
+            if ped ~= 0 then coroutine.yield(ped) end
+            success, ped = FindNextPed(handle)
+        until not success
+        EndFindPed(handle)
+    end)
+end
+
 RegisterCommand('testnpc', function()
     local playerPed = PlayerPedId()
     local coords = GetEntityCoords(playerPed)
     local fwd = GetEntityForwardVector(playerPed)
     local spawnCoords = coords + fwd * 3.0
     
-    local model = GetHashKey("a_m_m_business_01")
-    RequestModel(model)
-    while not HasModelLoaded(model) do Citizen.Wait(10) end
+    local models = {"a_m_m_business_01", "a_m_y_hipster_01", "g_m_y_mexgoon_01", "s_m_y_dealer_01"}
+    local model = GetHashKey(models[math.random(#models)])
     
-    local ped = CreatePed(4, model, spawnCoords.x, spawnCoords.y, spawnCoords.z, 0.0, true, false)
+    RequestModel(model)
+    while not HasModelLoaded(model) do Wait(10) end
+    
+    local ped = CreatePed(4, model, spawnCoords.x, spawnCoords.y, spawnCoords.z, GetEntityHeading(playerPed) + 180.0, true, false)
     SetModelAsNoLongerNeeded(model)
     
-    Citizen.Wait(500)
-    MakePedAggressive(ped, playerPed)
+    Wait(300)
+    MakePedAggro(ped)
     
-    print("[NPC AGGRO] ^2Test NPC spawned dan marah!^7")
+    print("[NPC AGGRO] ^2Test NPC spawned!^7")
 end, false)
 
-RegisterCommand('npcaggro', function()
+RegisterCommand('npcstatus', function()
     local count = 0
     for _ in pairs(aggroPeds) do count = count + 1 end
-    print("[NPC AGGRO] NPC agresif aktif: " .. count)
+    print("[NPC AGGRO] ^3NPC agresif aktif: ^1" .. count .. "^7")
 end, false)
