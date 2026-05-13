@@ -1,0 +1,120 @@
+═══════════════════════════════════════════════════════════════
+        AUTO UPDATER v5.0 - COMMAND LIST
+        Smart Resource Detection for FiveM
+        By: SCRT Server
+═══════════════════════════════════════════════════════════════
+
+FITUR UTAMA:
+• Auto Detection    - Deteksi resource baru otomatis
+• File Watcher      - Monitor perubahan file dalam resource
+• Auto Reload       - Reload otomatis jika file berubah
+• Auto Start        - Start resource baru otomatis
+• Health Check      - Monitor kesehatan resource
+• Error Recovery    - Auto restart resource yang crash
+• Version Tracking  - Track versi resource
+• Discord Webhook   - Notifikasi ke Discord
+• Smart Queue       - Antrian start resource (anti-lag)
+• Non-Blocking      - Tidak menyebabkan server hang
+
+═══════════════════════════════════════════════════════════════
+                        COMMANDS
+═══════════════════════════════════════════════════════════════
+
+/autoscan
+    - Scan manual untuk mencari resource baru
+    - Resource baru akan otomatis di-start
+
+/autorefresh [name]
+    - Refresh/reload resource tertentu
+    - Kosongkan [name] untuk refresh semua resource
+
+/autostatus
+    - Lihat status lengkap sistem
+    - Menampilkan: uptime, jumlah resource, stats, dll
+
+/autolist [filter]
+    - List semua resource yang di-track
+    - Gunakan [filter] untuk mencari resource tertentu
+    - Contoh: /autolist ped
+
+/autorestart [name]
+    - Restart resource tertentu (stop lalu start)
+    - Wajib isi [name]
+
+/autohealth
+    - Cek kesehatan semua resource
+    - Deteksi resource yang crash
+
+/autolog [count]
+    - Lihat log aktivitas terakhir
+    - Default: 10 entries
+    - Contoh: /autolog 20
+
+/autoconfig
+    - Lihat konfigurasi sistem saat ini
+
+/autopause
+    - Pause semua scanning otomatis
+    - Berguna saat maintenance
+
+/autoresume
+    - Resume scanning setelah di-pause
+
+/autofiles
+    - Cek perubahan file secara manual
+    - Akan reload resource yang filenya berubah
+
+═══════════════════════════════════════════════════════════════
+                    CARA KERJA OTOMATIS
+═══════════════════════════════════════════════════════════════
+
+1. UPLOAD RESOURCE BARU
+   → Terdeteksi dalam 30 detik
+   → Otomatis di-start
+
+2. EDIT FILE RESOURCE
+   → Terdeteksi dalam 15 detik
+   → Otomatis di-reload
+
+3. RESOURCE CRASH
+   → Terdeteksi oleh health check
+   → Otomatis di-restart (max 3x)
+
+SEMUA TANPA RESTART SERVER!
+
+═══════════════════════════════════════════════════════════════
+                      KONFIGURASI
+═══════════════════════════════════════════════════════════════
+
+Edit di server.lua bagian Config:
+
+scanInterval = 30       -- Scan resource baru (detik)
+fileCheckInterval = 15  -- Cek perubahan file (detik)
+healthCheckInterval = 120 -- Health check (detik)
+autoStart = true        -- Auto start resource baru
+autoReload = true       -- Auto reload jika file berubah
+autoRestart = true      -- Auto restart jika crash
+fileWatcher = true      -- Monitor perubahan file
+notifyPlayers = true    -- Notify ke chat
+discordWebhook = false  -- Kirim ke Discord
+webhookUrl = ""         -- URL webhook Discord
+
+═══════════════════════════════════════════════════════════════
+                      BLACKLIST
+═══════════════════════════════════════════════════════════════
+
+Resource yang TIDAK di-monitor (edit di Config.blacklist):
+- auto_updater
+- monitor
+- sessionmanager
+- spawnmanager
+- mapmanager
+- hardcap
+- yarn
+- webpack
+- chat
+- basic-gamemode
+- rconlog
+- fivem-map-hipster
+
+═══════════════════════════════════════════════════════════════
