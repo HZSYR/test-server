@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Player Menu</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background: transparent; 
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* NOTIFICATION */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,40,0.95) 100%);
+            border: 1px solid rgba(0,200,255,0.3);
+            border-radius: 12px;
+            padding: 15px 25px;
+            color: #fff;
+            display: none;
+            animation: slideIn 0.4s ease;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,200,255,0.2);
+            max-width: 320px;
+        }
+        .notification.show { display: block; }
+        .notification h3 { 
+            color: #00d4ff; 
+            font-size: 16px; 
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .notification p { 
+            font-size: 14px; 
+            color: rgba(255,255,255,0.8);
+            line-height: 1.4;
+        }
+        .notification .key {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            padding: 2px 10px;
+            border-radius: 4px;
+            font-weight: 700;
+            color: #000;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100px); opacity: 0; }
+        }
+        .notification.hide { animation: slideOut 0.4s ease forwards; }
+
+        /* MENU CONTAINER */
+        .menu-container {
+            position: fixed;
+            top: 50%;
+            left: 50px;
+            transform: translateY(-50%);
+            display: none;
+            z-index: 1000;
+        }
+        .menu-container.show { display: flex; gap: 10px; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 60px;
+            background: linear-gradient(180deg, rgba(15,15,25,0.95) 0%, rgba(5,5,15,0.98) 100%);
+            border-radius: 15px;
+            padding: 15px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .sidebar-item {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 20px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid transparent;
+        }
+        .sidebar-item:hover {
+            background: rgba(0,200,255,0.15);
+            border-color: rgba(0,200,255,0.3);
+            transform: scale(1.05);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, rgba(0,200,255,0.3), rgba(0,150,200,0.2));
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0,200,255,0.3);
+        }
+
+        /* MAIN PANEL */
+        .main-panel {
+            width: 350px;
+            max-height: 70vh;
+            background: linear-gradient(180deg, rgba(15,15,25,0.95) 0%, rgba(5,5,15,0.98) 100%);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(0,200,255,0.15) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .panel-header h2 {
+            color: #00d4ff;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .panel-header p {
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .panel-content {
+            padding: 15px;
+            max-height: calc(70vh - 80px);
+            overflow-y: auto;
+        }
+        .panel-content::-webkit-scrollbar { width: 4px; }
+        .panel-content::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .panel-content::-webkit-scrollbar-thumb { background: rgba(0,200,255,0.3); border-radius: 2px; }
+
+        /* MENU ITEMS */
+        .menu-section {
+            margin-bottom: 15px;
+        }
+        .menu-section-title {
+            color: rgba(255,255,255,0.4);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            padding-left: 5px;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .menu-item:hover {
+            background: rgba(0,200,255,0.1);
+            border-color: rgba(0,200,255,0.2);
+        }
+        .menu-item.active {
+            background: rgba(0,200,255,0.15);
+            border-color: rgba(0,200,255,0.4);
+        }
+        .menu-item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .menu-item-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,200,255,0.1);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .menu-item-text h4 {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .menu-item-text p {
+            color: rgba(255,255,255,0.4);
+            font-size: 11px;
+        }
+
+        /* TOGGLE SWITCH */
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .toggle.on { background: linear-gradient(135deg, #00d4ff, #0099cc); }
+        .toggle::after {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        .toggle.on::after { left: 23px; }
+
+        /* BUTTON */
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 6px;
+            color: #000;
+            font-weight: 600;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(0,200,255,0.3); }
+        .btn.danger { background: linear-gradient(135deg, #ff4444, #cc0000); color: #fff; }
+        .btn.success { background: linear-gradient(135deg, #00ff88, #00cc66); }
+
+        /* INPUT */
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: rgba(0,200,255,0.5);
+        }
+
+        /* SLIDER */
+        .slider-container {
+            margin-top: 10px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(255,255,255,0.6);
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        .slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,200,255,0.5);
+        }
+
+        /* PLAYER LIST */
+        .player-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 8px;
+            margin-bottom: 5px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .player-item:hover {
+            background: rgba(0,200,255,0.1);
+            border-color: rgba(0,200,255,0.2);
+        }
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .player-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #00d4ff, #0066cc);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+        }
+        .player-name { color: #fff; font-weight: 500; }
+        .player-id { color: rgba(255,255,255,0.4); font-size: 11px; }
+        .player-actions { display: flex; gap: 5px; }
+        .player-btn {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+        .player-btn:hover { background: rgba(0,200,255,0.3); }
+
+        /* COLOR PICKER */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+        .color-item {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        .color-item:hover { transform: scale(1.1); }
+        .color-item.selected { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        /* VEHICLE CATEGORIES */
+        .vehicle-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .vehicle-cat {
+            padding: 15px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        .vehicle-cat:hover {
+            background: rgba(0,200,255,0.1);
+            border-color: rgba(0,200,255,0.3);
+        }
+        .vehicle-cat-icon { font-size: 24px; margin-bottom: 5px; }
+        .vehicle-cat-name { color: #fff; font-size: 12px; font-weight: 500; }
+
+        /* CLOSE BUTTON */
+        .close-hint {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            padding: 10px 25px;
+            border-radius: 25px;
+            color: rgba(255,255,255,0.6);
+            font-size: 13px;
+            display: none;
+        }
+        .close-hint.show { display: block; }
+        .close-hint .key {
+            background: rgba(255,255,255,0.2);
+            padding: 3px 10px;
+            border-radius: 4px;
+            margin: 0 5px;
+        }
+
+        /* SUBMENU */
+        .submenu { display: none; }
+        .submenu.active { display: block; }
+    </style>
+</head>
+<body>
+    <!-- NOTIFICATION -->
+    <div class="notification" id="notification">
+        <h3>🎮 Selamat Datang!</h3>
+        <p>Tekan <span class="key">F1</span> untuk membuka Player Menu</p>
+    </div>
+
+    <!-- MENU -->
+    <div class="menu-container" id="menu">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="sidebar-item active" data-menu="players" title="Online Players">👥</div>
+            <div class="sidebar-item" data-menu="player" title="Player Options">🧑</div>
+            <div class="sidebar-item" data-menu="vehicle" title="Vehicle Options">🚗</div>
+            <div class="sidebar-item" data-menu="spawner" title="Vehicle Spawner">🚙</div>
+            <div class="sidebar-item" data-menu="weapons" title="Weapon Options">🔫</div>
+            <div class="sidebar-item" data-menu="appearance" title="Appearance">👔</div>
+            <div class="sidebar-item" data-menu="world" title="World Options">🌍</div>
+            <div class="sidebar-item" data-menu="misc" title="Misc">⚙️</div>
+        </div>
+
+        <!-- MAIN PANEL -->
+        <div class="main-panel">
+            <!-- ONLINE PLAYERS -->
+            <div class="submenu active" id="menu-players">
+                <div class="panel-header">
+                    <h2>👥 Online Players</h2>
+                    <p>Kelola player yang sedang online</p>
+                </div>
+                <div class="panel-content">
+                    <div id="player-list"></div>
+                </div>
+            </div>
+
+            <!-- PLAYER OPTIONS -->
+            <div class="submenu" id="menu-player">
+                <div class="panel-header">
+                    <h2>🧑 Player Options</h2>
+                    <p>Pengaturan karakter kamu</p>
+                </div>
+                <div class="panel-content">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Status</div>
+                        <div class="menu-item" data-action="godmode">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🛡️</div>
+                                <div class="menu-item-text">
+                                    <h4>God Mode</h4>
+                                    <p>Kebal dari semua damage</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-godmode"></div>
+                        </div>
+                        <div class="menu-item" data-action="invisible">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">👻</div>
+                                <div class="menu-item-text">
+                                    <h4>Invisible</h4>
+                                    <p>Tidak terlihat oleh player lain</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-invisible"></div>
+                        </div>
+                        <div class="menu-item" data-action="neverwanted">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">⭐</div>
+                                <div class="menu-item-text">
+                                    <h4>Never Wanted</h4>
+                                    <p>Polisi tidak mengejar</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-neverwanted"></div>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Abilities</div>
+                        <div class="menu-item" data-action="stamina">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🏃</div>
+                                <div class="menu-item-text">
+                                    <h4>Unlimited Stamina</h4>
+                                    <p>Tidak pernah lelah</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-stamina"></div>
+                        </div>
+                        <div class="menu-item" data-action="fastrun">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">⚡</div>
+                                <div class="menu-item-text">
+                                    <h4>Fast Run</h4>
+                                    <p>Lari lebih cepat</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-fastrun"></div>
+                        </div>
+                        <div class="menu-item" data-action="fastswim">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🏊</div>
+                                <div class="menu-item-text">
+                                    <h4>Fast Swim</h4>
+                                    <p>Berenang lebih cepat</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-fastswim"></div>
+                        </div>
+                        <div class="menu-item" data-action="superjump">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🦘</div>
+                                <div class="menu-item-text">
+                                    <h4>Super Jump</h4>
+                                    <p>Lompat sangat tinggi</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-superjump"></div>
+                        </div>
+                        <div class="menu-item" data-action="noragdoll">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🧍</div>
+                                <div class="menu-item-text">
+                                    <h4>No Ragdoll</h4>
+                                    <p>Tidak bisa jatuh</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-noragdoll"></div>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Actions</div>
+                        <div class="menu-item" data-action="heal">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">❤️</div>
+                                <div class="menu-item-text">
+                                    <h4>Max Health</h4>
+                                    <p>Pulihkan kesehatan penuh</p>
+                                </div>
+                            </div>
+                            <button class="btn">Heal</button>
+                        </div>
+                        <div class="menu-item" data-action="armor">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🛡️</div>
+                                <div class="menu-item-text">
+                                    <h4>Max Armor</h4>
+                                    <p>Armor penuh</p>
+                                </div>
+                            </div>
+                            <button class="btn">Armor</button>
+                        </div>
+                        <div class="menu-item" data-action="suicide">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">💀</div>
+                                <div class="menu-item-text">
+                                    <h4>Suicide</h4>
+                                    <p>Bunuh diri</p>
+                                </div>
+                            </div>
+                            <button class="btn danger">Kill</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VEHICLE OPTIONS -->
+            <div class="submenu" id="menu-vehicle">
+                <div class="panel-header">
+                    <h2>🚗 Vehicle Options</h2>
+                    <p>Pengaturan kendaraan</p>
+                </div>
+                <div class="panel-content">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Status</div>
+                        <div class="menu-item" data-action="vehgod">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🛡️</div>
+                                <div class="menu-item-text">
+                                    <h4>Vehicle God Mode</h4>
+                                    <p>Kendaraan kebal</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-vehgod"></div>
+                        </div>
+                        <div class="menu-item" data-action="vehinvisible">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">👻</div>
+                                <div class="menu-item-text">
+                                    <h4>Invisible Vehicle</h4>
+                                    <p>Kendaraan tidak terlihat</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-vehinvisible"></div>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Actions</div>
+                        <div class="menu-item" data-action="repair">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🔧</div>
+                                <div class="menu-item-text">
+                                    <h4>Repair Vehicle</h4>
+                                    <p>Perbaiki kendaraan</p>
+                                </div>
+                            </div>
+                            <button class="btn">Repair</button>
+                        </div>
+                        <div class="menu-item" data-action="wash">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🧽</div>
+                                <div class="menu-item-text">
+                                    <h4>Wash Vehicle</h4>
+                                    <p>Bersihkan kendaraan</p>
+                                </div>
+                            </div>
+                            <button class="btn">Wash</button>
+                        </div>
+                        <div class="menu-item" data-action="flip">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🔄</div>
+                                <div class="menu-item-text">
+                                    <h4>Flip Vehicle</h4>
+                                    <p>Balikkan kendaraan</p>
+                                </div>
+                            </div>
+                            <button class="btn">Flip</button>
+                        </div>
+                        <div class="menu-item" data-action="engine">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🔑</div>
+                                <div class="menu-item-text">
+                                    <h4>Toggle Engine</h4>
+                                    <p>Nyalakan/matikan mesin</p>
+                                </div>
+                            </div>
+                            <button class="btn">Toggle</button>
+                        </div>
+                        <div class="menu-item" data-action="deleteveh">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🗑️</div>
+                                <div class="menu-item-text">
+                                    <h4>Delete Vehicle</h4>
+                                    <p>Hapus kendaraan</p>
+                                </div>
+                            </div>
+                            <button class="btn danger">Delete</button>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Performance</div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Torque Multiplier</span>
+                                <span id="torque-val">1.0x</span>
+                            </div>
+                            <input type="range" class="slider" id="torque-slider" min="1" max="10" value="1" step="0.5">
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Power Multiplier</span>
+                                <span id="power-val">1.0x</span>
+                            </div>
+                            <input type="range" class="slider" id="power-slider" min="1" max="10" value="1" step="0.5">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VEHICLE SPAWNER -->
+            <div class="submenu" id="menu-spawner">
+                <div class="panel-header">
+                    <h2>🚙 Vehicle Spawner</h2>
+                    <p>Spawn kendaraan</p>
+                </div>
+                <div class="panel-content">
+                    <div class="input-group">
+                        <input type="text" id="spawn-input" placeholder="Nama kendaraan...">
+                        <button class="btn" id="spawn-btn">Spawn</button>
+                    </div>
+                    <div class="menu-section" style="margin-top: 15px;">
+                        <div class="menu-section-title">Categories</div>
+                        <div class="vehicle-grid">
+                            <div class="vehicle-cat" data-cat="super"><div class="vehicle-cat-icon">🏎️</div><div class="vehicle-cat-name">Super</div></div>
+                            <div class="vehicle-cat" data-cat="sports"><div class="vehicle-cat-icon">🚗</div><div class="vehicle-cat-name">Sports</div></div>
+                            <div class="vehicle-cat" data-cat="muscle"><div class="vehicle-cat-icon">🚙</div><div class="vehicle-cat-name">Muscle</div></div>
+                            <div class="vehicle-cat" data-cat="offroad"><div class="vehicle-cat-icon">🛻</div><div class="vehicle-cat-name">Off-Road</div></div>
+                            <div class="vehicle-cat" data-cat="motorcycle"><div class="vehicle-cat-icon">🏍️</div><div class="vehicle-cat-name">Motorcycle</div></div>
+                            <div class="vehicle-cat" data-cat="helicopter"><div class="vehicle-cat-icon">🚁</div><div class="vehicle-cat-name">Helicopter</div></div>
+                            <div class="vehicle-cat" data-cat="plane"><div class="vehicle-cat-icon">✈️</div><div class="vehicle-cat-name">Plane</div></div>
+                            <div class="vehicle-cat" data-cat="boat"><div class="vehicle-cat-icon">🚤</div><div class="vehicle-cat-name">Boat</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WEAPON OPTIONS -->
+            <div class="submenu" id="menu-weapons">
+                <div class="panel-header">
+                    <h2>🔫 Weapon Options</h2>
+                    <p>Pengaturan senjata</p>
+                </div>
+                <div class="panel-content">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Toggles</div>
+                        <div class="menu-item" data-action="unlimitedammo">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">♾️</div>
+                                <div class="menu-item-text">
+                                    <h4>Unlimited Ammo</h4>
+                                    <p>Peluru tak terbatas</p>
+                                </div>
+                            </div>
+                            <div class="toggle on" id="toggle-unlimitedammo"></div>
+                        </div>
+                        <div class="menu-item" data-action="noreload">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🔄</div>
+                                <div class="menu-item-text">
+                                    <h4>No Reload</h4>
+                                    <p>Tidak perlu reload</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-noreload"></div>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Actions</div>
+                        <div class="menu-item" data-action="getallweapons">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🎒</div>
+                                <div class="menu-item-text">
+                                    <h4>Get All Weapons</h4>
+                                    <p>Dapatkan semua senjata</p>
+                                </div>
+                            </div>
+                            <button class="btn success">Get All</button>
+                        </div>
+                        <div class="menu-item" data-action="removeallweapons">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🗑️</div>
+                                <div class="menu-item-text">
+                                    <h4>Remove All Weapons</h4>
+                                    <p>Hapus semua senjata</p>
+                                </div>
+                            </div>
+                            <button class="btn danger">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- APPEARANCE -->
+            <div class="submenu" id="menu-appearance">
+                <div class="panel-header">
+                    <h2>👔 Appearance</h2>
+                    <p>Ubah penampilan karakter</p>
+                </div>
+                <div class="panel-content">
+                    <div class="input-group">
+                        <input type="text" id="ped-input" placeholder="Nama ped model...">
+                        <button class="btn" id="ped-btn">Set Ped</button>
+                    </div>
+                    <div class="menu-section" style="margin-top: 15px;">
+                        <div class="menu-section-title">Quick Peds</div>
+                        <div class="vehicle-grid">
+                            <div class="vehicle-cat" data-ped="mp_m_freemode_01"><div class="vehicle-cat-icon">👨</div><div class="vehicle-cat-name">MP Male</div></div>
+                            <div class="vehicle-cat" data-ped="mp_f_freemode_01"><div class="vehicle-cat-icon">👩</div><div class="vehicle-cat-name">MP Female</div></div>
+                            <div class="vehicle-cat" data-ped="a_m_y_hipster_01"><div class="vehicle-cat-icon">🧔</div><div class="vehicle-cat-name">Hipster</div></div>
+                            <div class="vehicle-cat" data-ped="s_m_y_cop_01"><div class="vehicle-cat-icon">👮</div><div class="vehicle-cat-name">Police</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WORLD OPTIONS -->
+            <div class="submenu" id="menu-world">
+                <div class="panel-header">
+                    <h2>🌍 World Options</h2>
+                    <p>Pengaturan waktu & cuaca</p>
+                </div>
+                <div class="panel-content">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Time</div>
+                        <div class="menu-item" data-action="freezetime">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">⏸️</div>
+                                <div class="menu-item-text">
+                                    <h4>Freeze Time</h4>
+                                    <p>Hentikan waktu</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-freezetime"></div>
+                        </div>
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span>Time of Day</span>
+                                <span id="time-val">12:00</span>
+                            </div>
+                            <input type="range" class="slider" id="time-slider" min="0" max="23" value="12">
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Weather</div>
+                        <div class="vehicle-grid">
+                            <div class="vehicle-cat" data-weather="CLEAR"><div class="vehicle-cat-icon">☀️</div><div class="vehicle-cat-name">Clear</div></div>
+                            <div class="vehicle-cat" data-weather="CLOUDS"><div class="vehicle-cat-icon">☁️</div><div class="vehicle-cat-name">Clouds</div></div>
+                            <div class="vehicle-cat" data-weather="RAIN"><div class="vehicle-cat-icon">🌧️</div><div class="vehicle-cat-name">Rain</div></div>
+                            <div class="vehicle-cat" data-weather="THUNDER"><div class="vehicle-cat-icon">⛈️</div><div class="vehicle-cat-name">Thunder</div></div>
+                            <div class="vehicle-cat" data-weather="FOGGY"><div class="vehicle-cat-icon">🌫️</div><div class="vehicle-cat-name">Foggy</div></div>
+                            <div class="vehicle-cat" data-weather="XMAS"><div class="vehicle-cat-icon">❄️</div><div class="vehicle-cat-name">Snow</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MISC -->
+            <div class="submenu" id="menu-misc">
+                <div class="panel-header">
+                    <h2>⚙️ Misc Options</h2>
+                    <p>Pengaturan lainnya</p>
+                </div>
+                <div class="panel-content">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Teleport</div>
+                        <div class="menu-item" data-action="tpwaypoint">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">📍</div>
+                                <div class="menu-item-text">
+                                    <h4>Teleport to Waypoint</h4>
+                                    <p>Teleport ke marker di map</p>
+                                </div>
+                            </div>
+                            <button class="btn">Teleport</button>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">NoClip</div>
+                        <div class="menu-item" data-action="noclip">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🕊️</div>
+                                <div class="menu-item-text">
+                                    <h4>NoClip Mode</h4>
+                                    <p>Terbang menembus objek</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-noclip"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="close-hint" id="close-hint">Tekan <span class="key">F1</span> atau <span class="key">ESC</span> untuk menutup</div>
+
+    <script>
+        const menu = document.getElementById('menu');
+        const notification = document.getElementById('notification');
+        const closeHint = document.getElementById('close-hint');
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        const submenus = document.querySelectorAll('.submenu');
+
+        let toggleStates = {};
+
+        // Sidebar navigation
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                sidebarItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                const menuId = item.dataset.menu;
+                submenus.forEach(s => s.classList.remove('active'));
+                document.getElementById('menu-' + menuId).classList.add('active');
+            });
+        });
+
+        // Toggle switches
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                toggle.classList.toggle('on');
+                const action = toggle.id.replace('toggle-', '');
+                const state = toggle.classList.contains('on');
+                toggleStates[action] = state;
+                
+                fetch('https://player_menu/toggle', {
+                    method: 'POST',
+                    body: JSON.stringify({ action: action, state: state })
+                });
+            });
+        });
+
+        // Button actions
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const menuItem = btn.closest('.menu-item');
+                if (menuItem) {
+                    const action = menuItem.dataset.action;
+                    fetch('https://player_menu/action', {
+                        method: 'POST',
+                        body: JSON.stringify({ action: action })
+                    });
+                }
+            });
+        });
+
+        // Spawn button
+        document.getElementById('spawn-btn').addEventListener('click', () => {
+            const name = document.getElementById('spawn-input').value;
+            if (name) {
+                fetch('https://player_menu/spawn_vehicle', {
+                    method: 'POST',
+                    body: JSON.stringify({ model: name })
+                });
+            }
+        });
+
+        // Ped button
+        document.getElementById('ped-btn').addEventListener('click', () => {
+            const name = document.getElementById('ped-input').value;
+            if (name) {
+                fetch('https://player_menu/set_ped', {
+                    method: 'POST',
+                    body: JSON.stringify({ model: name })
+                });
+            }
+        });
+
+        // Vehicle categories
+        document.querySelectorAll('.vehicle-cat[data-cat]').forEach(cat => {
+            cat.addEventListener('click', () => {
+                fetch('https://player_menu/spawn_category', {
+                    method: 'POST',
+                    body: JSON.stringify({ category: cat.dataset.cat })
+                });
+            });
+        });
+
+        // Quick peds
+        document.querySelectorAll('.vehicle-cat[data-ped]').forEach(cat => {
+            cat.addEventListener('click', () => {
+                fetch('https://player_menu/set_ped', {
+                    method: 'POST',
+                    body: JSON.stringify({ model: cat.dataset.ped })
+                });
+            });
+        });
+
+        // Weather
+        document.querySelectorAll('.vehicle-cat[data-weather]').forEach(cat => {
+            cat.addEventListener('click', () => {
+                fetch('https://player_menu/set_weather', {
+                    method: 'POST',
+                    body: JSON.stringify({ weather: cat.dataset.weather })
+                });
+            });
+        });
+
+        // Sliders
+        document.getElementById('torque-slider').addEventListener('input', (e) => {
+            document.getElementById('torque-val').textContent = e.target.value + 'x';
+            fetch('https://player_menu/set_torque', {
+                method: 'POST',
+                body: JSON.stringify({ value: parseFloat(e.target.value) })
+            });
+        });
+
+        document.getElementById('power-slider').addEventListener('input', (e) => {
+            document.getElementById('power-val').textContent = e.target.value + 'x';
+            fetch('https://player_menu/set_power', {
+                method: 'POST',
+                body: JSON.stringify({ value: parseFloat(e.target.value) })
+            });
+        });
+
+        document.getElementById('time-slider').addEventListener('input', (e) => {
+            const hour = parseInt(e.target.value);
+            document.getElementById('time-val').textContent = hour.toString().padStart(2, '0') + ':00';
+            fetch('https://player_menu/set_time', {
+                method: 'POST',
+                body: JSON.stringify({ hour: hour })
+            });
+        });
+
+        // NUI Messages
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+
+            if (data.action === 'show') {
+                menu.classList.add('show');
+                closeHint.classList.add('show');
+            }
+
+            if (data.action === 'hide') {
+                menu.classList.remove('show');
+                closeHint.classList.remove('show');
+            }
+
+            if (data.action === 'notify') {
+                notification.classList.add('show');
+                setTimeout(() => {
+                    notification.classList.add('hide');
+                    setTimeout(() => {
+                        notification.classList.remove('show', 'hide');
+                    }, 400);
+                }, 10000);
+            }
+
+            if (data.action === 'updatePlayers') {
+                const list = document.getElementById('player-list');
+                list.innerHTML = '';
+                data.players.forEach(p => {
+                    const div = document.createElement('div');
+                    div.className = 'player-item';
+                    div.innerHTML = `
+                        <div class="player-info">
+                            <div class="player-avatar">${p.name.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <div class="player-name">${p.name}</div>
+                                <div class="player-id">ID: ${p.id}</div>
+                            </div>
+                        </div>
+                        <div class="player-actions">
+                            <button class="player-btn" onclick="playerAction('tp', ${p.id})" title="Teleport">📍</button>
+                            <button class="player-btn" onclick="playerAction('spectate', ${p.id})" title="Spectate">👁️</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+        });
+
+        function playerAction(action, playerId) {
+            fetch('https://player_menu/player_action', {
+                method: 'POST',
+                body: JSON.stringify({ action: action, target: playerId })
+            });
+        }
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                fetch('https://player_menu/close', { method: 'POST' });
+            }
+        });
+    </script>
+</body>
+</html>
