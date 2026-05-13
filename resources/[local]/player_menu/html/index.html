@@ -66,9 +66,10 @@
             left: 50px;
             transform: translateY(-50%);
             display: none;
-            z-index: 1000;
+            gap: 10px;
+            z-index: 9999;
         }
-        .menu-container.show { display: flex; gap: 10px; }
+        .menu-container.show { display: flex !important; }
 
         /* SIDEBAR */
         .sidebar {
@@ -951,6 +952,8 @@
     <div class="close-hint" id="close-hint">Tekan <span class="key">F1</span> atau <span class="key">ESC</span> untuk menutup</div>
 
     <script>
+        console.log('[PLAYER MENU] HTML Script loaded!');
+        
         const menu = document.getElementById('menu');
         const notification = document.getElementById('notification');
         const closeHint = document.getElementById('close-hint');
@@ -958,6 +961,10 @@
         const submenus = document.querySelectorAll('.submenu');
 
         let toggleStates = {};
+        
+        // Debug: Check if elements exist
+        console.log('[PLAYER MENU] Menu element:', menu);
+        console.log('[PLAYER MENU] CloseHint element:', closeHint);
 
         // Sidebar navigation
         sidebarItems.forEach(item => {
@@ -1082,14 +1089,21 @@
         // NUI Messages
         window.addEventListener('message', (event) => {
             const data = event.data;
+            console.log('[PLAYER MENU] NUI Message received:', data);
 
             if (data.action === 'show') {
+                console.log('[PLAYER MENU] Showing menu...');
+                menu.style.display = 'flex';
                 menu.classList.add('show');
+                closeHint.style.display = 'block';
                 closeHint.classList.add('show');
             }
 
             if (data.action === 'hide') {
+                console.log('[PLAYER MENU] Hiding menu...');
+                menu.style.display = 'none';
                 menu.classList.remove('show');
+                closeHint.style.display = 'none';
                 closeHint.classList.remove('show');
             }
 
