@@ -21,6 +21,17 @@ local function IsPedHuman(ped)
     return not IsPedAPlayer(ped) and GetPedType(ped) ~= 28
 end
 
+local function SetPedBrave(ped)
+    SetPedFleeAttributes(ped, 0, false)
+    SetPedConfigFlag(ped, 2, false)
+    SetPedConfigFlag(ped, 17, false)
+    SetPedConfigFlag(ped, 46, true)
+    SetPedConfigFlag(ped, 128, true)
+    SetPedConfigFlag(ped, 188, true)
+    SetPedConfigFlag(ped, 281, true)
+    SetPedConfigFlag(ped, 292, true)
+end
+
 local function ArmPed(ped)
     if armedPeds[ped] then return end
     if not DoesEntityExist(ped) then return end
@@ -28,6 +39,8 @@ local function ArmPed(ped)
     if not IsPedHuman(ped) then return end
     
     armedPeds[ped] = true
+    
+    SetPedBrave(ped)
     
     local weapon = weapons[math.random(#weapons)]
     GiveWeaponToPed(ped, weapon, 9999, false, false)
@@ -48,21 +61,24 @@ local function MakePedAggro(ped, target)
     
     ClearPedTasks(ped)
     
+    SetPedBrave(ped)
+    
     if IsPedHuman(ped) and not armedPeds[ped] then
         ArmPed(ped)
     end
     
     SetPedRelationshipGroupHash(ped, CHAOS_GROUP)
     
-    SetPedFleeAttributes(ped, 0, false)
     SetPedCombatAttributes(ped, 0, true)
     SetPedCombatAttributes(ped, 1, true)
     SetPedCombatAttributes(ped, 2, true)
+    SetPedCombatAttributes(ped, 5, true)
     SetPedCombatAttributes(ped, 46, true)
+    SetPedCombatAttributes(ped, 52, true)
     SetPedCombatAbility(ped, 2)
     SetPedCombatMovement(ped, 2)
     SetPedCombatRange(ped, 2)
-    SetPedAccuracy(ped, 60)
+    SetPedAccuracy(ped, 70)
     
     TaskCombatPed(ped, target, 0, 16)
 end

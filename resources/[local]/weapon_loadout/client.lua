@@ -54,18 +54,17 @@ local function GiveAllWeapons(ped)
     SetPedInfiniteAmmoClip(PlayerPedId(), true)
 end
 
-local hasWeapons = false
+local lastPed = 0
 
 RegisterNetEvent('weapon_loadout:give')
 AddEventHandler('weapon_loadout:give', function()
     GiveAllWeapons(PlayerPedId())
-    hasWeapons = true
 end)
 
 AddEventHandler('playerSpawned', function()
     Wait(1000)
     GiveAllWeapons(PlayerPedId())
-    hasWeapons = true
+    lastPed = PlayerPedId()
     print("^2[WEAPONS] Senjata diberikan saat spawn!^7")
 end)
 
@@ -75,17 +74,13 @@ Citizen.CreateThread(function()
         local ped = PlayerPedId()
         
         if DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
-            if not hasWeapons then
+            if ped ~= lastPed then
                 GiveAllWeapons(ped)
-                hasWeapons = true
-                print("^2[WEAPONS] Senjata diberikan (auto-check)!^7")
+                lastPed = ped
+                print("^2[WEAPONS] Ped berubah - senjata diberikan!^7")
             end
             
             SetPedInfiniteAmmoClip(ped, true)
-        end
-        
-        if IsPedDeadOrDying(ped) then
-            hasWeapons = false
         end
     end
 end)
