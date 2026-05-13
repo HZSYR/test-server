@@ -21,7 +21,15 @@ local toggles = {
     unlimitedammo = true,
     noreload = false,
     freezetime = false,
-    noclip = false
+    noclip = false,
+    -- ESP
+    espplayer = false,
+    espnpc = false,
+    espvehicle = false,
+    espbox = false,
+    espline = false,
+    espdistance = false,
+    esphealth = false
 }
 
 local noclipCam = nil
@@ -539,5 +547,206 @@ Citizen.CreateThread(function()
             SetEntityVisible(ped, true, false)
         end
         wasNoclip = toggles.noclip
+    end
+end)
+
+-- ============================================
+-- ESP SYSTEM
+-- ============================================
+
+local espColors = {
+    player = {r = 255, g = 0, b = 0, a = 255},      -- Red
+    npc = {r = 255, g = 165, b = 0, a = 255},       -- Orange
+    vehicle = {r = 0, g = 255, b = 255, a = 255},   -- Cyan
+    health = {r = 0, g = 255, b = 0, a = 255},      -- Green
+    text = {r = 255, g = 255, b = 255, a = 255}     -- White
+}
+
+function DrawESPText(text, x, y, scale, r, g, b, a)
+    SetTextFont(4)
+    SetTextScale(scale, scale)
+    SetTextColour(r, g, b, a)
+    SetTextOutline()
+    SetTextCentre(true)
+    SetTextEntry("STRING")
+    AddTextComponentString(text)
+    DrawText(x, y)
+end
+
+function Draw3DText(coords, text, scale, r, g, b, a)
+    local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z)
+    if onScreen then
+        DrawESPText(text, screenX, screenY, scale, r, g, b, a)
+        return screenX, screenY
+    end
+    return nil, nil
+end
+
+function DrawESPBox(entity, r, g, b, a)
+    local coords = GetEntityCoords(entity)
+    local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z)
+    
+    if onScreen then
+        local camCoords = GetGameplayCamCoord()
+        local dist = #(camCoords - coords)
+        local boxSize = 0.03 / (dist / 50)
+        boxSize = math.max(0.01, math.min(boxSize, 0.08))
+        
+        local halfW = boxSize / 2
+        local halfH = boxSize * 1.5
+        
+        DrawRect(screenX, screenY - halfH, boxSize, 0.002, r, g, b, a)
+        DrawRect(screenX, screenY + halfH, boxSize, 0.002, r, g, b, a)
+        DrawRect(screenX - halfW, screenY, 0.002, halfH * 2, r, g, b, a)
+        DrawRect(screenX + halfW, screenY, 0.002, halfH * 2, r, g, b, a)
+    end
+end
+
+function DrawESPLine(entity, r, g, b, a)
+    local coords = GetEntityCoords(entity)
+    local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z)
+    
+    if onScreen then
+        DrawLine2D(0.5, 1.0, screenX, screenY, r, g, b, a)
+    end
+end
+
+function DrawLine2D(x1, y1, x2, y2, r, g, b, a)
+    local steps = 50
+    for i = 0, steps do
+        local t = i / steps
+        local x = x1 + (x2 - x1) * t
+        local y = y1 + (y2 - y1) * t
+        DrawRect(x, y, 0.001, 0.001, r, g, b, a)
+    end
+end
+
+function GetHealthBar(entity)
+    local health = GetEntityHealth(entity)
+    local maxHealth = GetEntityMaxHealth(entity)
+    if maxHealth == 0 then maxHealth = 200 end
+    local percent = math.floor((health / maxHealth) * 100)
+    return percent
+end
+
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+        
+        local espActive = toggles.espplayer or toggles.espnpc or toggles.espvehicle
+        
+        if espActive then
+            local myPed = PlayerPedId()
+            local myCoords = GetEntityCoords(myPed)
+            
+            -- ESP Players
+            if toggles.espplayer then
+                for _, playerId in ipairs(GetActivePlayers()) do
+                    local targetPed = GetPlayerPed(playerId)
+                    if targetPed ~= myPed and DoesEntityExist(targetPed) and not IsPedDeadOrDying(targetPed) then
+                        local coords = GetEntityCoords(targetPed)
+                        local dist = #(myCoords - coords)
+                        
+                        if dist < 500.0 then
+                            local playerName = GetPlayerName(playerId)
+                            local c = espColors.player
+                            
+                            -- Box
+                            if toggles.espbox then
+                                DrawESPBox(targetPed, c.r, c.g, c.b, c.a)
+                            end
+                            
+                            -- Line
+                            if toggles.espline then
+                                DrawESPLine(targetPed, c.r, c.g, c.b, 150)
+                            end
+                            
+                            -- Text info
+                            local info = playerName
+                            if toggles.espdistance then
+                                info = info .. " [" .. math.floor(dist) .. "m]"
+                            end
+                            if toggles.esphealth then
+                                info = info .. " (" .. GetHealthBar(targetPed) .. "%)"
+                            end
+                            
+                            Draw3DText(vector3(coords.x, coords.y, coords.z + 1.0), info, 0.3, c.r, c.g, c.b, c.a)
+                        end
+                    end
+                end
+            end
+            
+            -- ESP NPCs
+            if toggles.espnpc then
+                local handle, ped = FindFirstPed()
+                local success = true
+                
+                while success do
+                    if ped ~= myPed and not IsPedAPlayer(ped) and DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
+                        local coords = GetEntityCoords(ped)
+                        local dist = #(myCoords - coords)
+                        
+                        if dist < 150.0 then
+                            local c = espColors.npc
+                            
+                            if toggles.espbox then
+                                DrawESPBox(ped, c.r, c.g, c.b, c.a)
+                            end
+                            
+                            if toggles.espline then
+                                DrawESPLine(ped, c.r, c.g, c.b, 100)
+                            end
+                            
+                            local info = "NPC"
+                            if toggles.espdistance then
+                                info = info .. " [" .. math.floor(dist) .. "m]"
+                            end
+                            if toggles.esphealth then
+                                info = info .. " (" .. GetHealthBar(ped) .. "%)"
+                            end
+                            
+                            Draw3DText(vector3(coords.x, coords.y, coords.z + 1.0), info, 0.25, c.r, c.g, c.b, c.a)
+                        end
+                    end
+                    success, ped = FindNextPed(handle)
+                end
+                EndFindPed(handle)
+            end
+            
+            -- ESP Vehicles
+            if toggles.espvehicle then
+                local handle, veh = FindFirstVehicle()
+                local success = true
+                
+                while success do
+                    if DoesEntityExist(veh) then
+                        local coords = GetEntityCoords(veh)
+                        local dist = #(myCoords - coords)
+                        
+                        if dist < 200.0 and dist > 5.0 then
+                            local c = espColors.vehicle
+                            
+                            if toggles.espbox then
+                                DrawESPBox(veh, c.r, c.g, c.b, c.a)
+                            end
+                            
+                            if toggles.espline then
+                                DrawESPLine(veh, c.r, c.g, c.b, 100)
+                            end
+                            
+                            local vehName = GetDisplayNameFromVehicleModel(GetEntityModel(veh))
+                            local info = vehName
+                            if toggles.espdistance then
+                                info = info .. " [" .. math.floor(dist) .. "m]"
+                            end
+                            
+                            Draw3DText(vector3(coords.x, coords.y, coords.z + 1.5), info, 0.25, c.r, c.g, c.b, c.a)
+                        end
+                    end
+                    success, veh = FindNextVehicle(handle)
+                end
+                EndFindVehicle(handle)
+            end
+        end
     end
 end)

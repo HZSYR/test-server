@@ -428,6 +428,7 @@
             <div class="sidebar-item" data-menu="weapons" title="Weapon Options">🔫</div>
             <div class="sidebar-item" data-menu="appearance" title="Appearance">👔</div>
             <div class="sidebar-item" data-menu="world" title="World Options">🌍</div>
+            <div class="sidebar-item" data-menu="esp" title="ESP">👁️</div>
             <div class="sidebar-item" data-menu="misc" title="Misc">⚙️</div>
         </div>
 
@@ -818,6 +819,92 @@
                             <div class="vehicle-cat" data-weather="THUNDER"><div class="vehicle-cat-icon">⛈️</div><div class="vehicle-cat-name">Thunder</div></div>
                             <div class="vehicle-cat" data-weather="FOGGY"><div class="vehicle-cat-icon">🌫️</div><div class="vehicle-cat-name">Foggy</div></div>
                             <div class="vehicle-cat" data-weather="XMAS"><div class="vehicle-cat-icon">❄️</div><div class="vehicle-cat-name">Snow</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ESP -->
+            <div class="submenu" id="menu-esp">
+                <div class="panel-header">
+                    <h2>👁️ ESP Options</h2>
+                    <p>Lihat entity melalui dinding</p>
+                </div>
+                <div class="panel-content">
+                    <div class="menu-section">
+                        <div class="menu-section-title">Target ESP</div>
+                        <div class="menu-item" data-action="espplayer">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">👤</div>
+                                <div class="menu-item-text">
+                                    <h4>Player ESP</h4>
+                                    <p>Lihat semua player</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-espplayer"></div>
+                        </div>
+                        <div class="menu-item" data-action="espnpc">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🧟</div>
+                                <div class="menu-item-text">
+                                    <h4>NPC ESP</h4>
+                                    <p>Lihat semua NPC</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-espnpc"></div>
+                        </div>
+                        <div class="menu-item" data-action="espvehicle">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">🚗</div>
+                                <div class="menu-item-text">
+                                    <h4>Vehicle ESP</h4>
+                                    <p>Lihat semua kendaraan</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-espvehicle"></div>
+                        </div>
+                    </div>
+                    <div class="menu-section">
+                        <div class="menu-section-title">Display Options</div>
+                        <div class="menu-item" data-action="espbox">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">⬜</div>
+                                <div class="menu-item-text">
+                                    <h4>Box ESP</h4>
+                                    <p>Tampilkan kotak di sekitar target</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-espbox"></div>
+                        </div>
+                        <div class="menu-item" data-action="espline">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">📏</div>
+                                <div class="menu-item-text">
+                                    <h4>Line ESP</h4>
+                                    <p>Garis dari layar ke target</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-espline"></div>
+                        </div>
+                        <div class="menu-item" data-action="espdistance">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">📐</div>
+                                <div class="menu-item-text">
+                                    <h4>Distance</h4>
+                                    <p>Tampilkan jarak ke target</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-espdistance"></div>
+                        </div>
+                        <div class="menu-item" data-action="esphealth">
+                            <div class="menu-item-left">
+                                <div class="menu-item-icon">❤️</div>
+                                <div class="menu-item-text">
+                                    <h4>Health Bar</h4>
+                                    <p>Tampilkan HP target</p>
+                                </div>
+                            </div>
+                            <div class="toggle" id="toggle-esphealth"></div>
                         </div>
                     </div>
                 </div>
