@@ -3,6 +3,8 @@
 -- By Kapuyuak
 -- ============================================
 
+print("^2[PLAYER MENU] Script loaded!^7")
+
 local menuOpen = false
 local firstSpawn = true
 
@@ -50,6 +52,7 @@ end, false)
 RegisterKeyMapping('playermenu', 'Open Player Menu', 'keyboard', 'F1')
 
 function ToggleMenu()
+    print("^3[PLAYER MENU] ToggleMenu called! menuOpen: " .. tostring(not menuOpen) .. "^7")
     menuOpen = not menuOpen
     SetNuiFocus(menuOpen, menuOpen)
     
@@ -63,9 +66,12 @@ end
 
 -- Direct F1 detection as backup
 Citizen.CreateThread(function()
+    print("^2[PLAYER MENU] F1 detection thread started!^7")
     while true do
         Wait(0)
-        if IsControlJustPressed(0, 288) then -- F1
+        -- F1 = 288, juga coba 170 (F3 alternatif)
+        if IsControlJustPressed(0, 288) or IsDisabledControlJustPressed(0, 288) then
+            print("^1[PLAYER MENU] F1 PRESSED!^7")
             ToggleMenu()
         end
     end
