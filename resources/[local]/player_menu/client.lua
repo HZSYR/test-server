@@ -43,6 +43,10 @@ RegisterCommand('playermenu', function()
     ToggleMenu()
 end, false)
 
+RegisterCommand('menu', function()
+    ToggleMenu()
+end, false)
+
 RegisterKeyMapping('playermenu', 'Open Player Menu', 'keyboard', 'F1')
 
 function ToggleMenu()
@@ -56,6 +60,16 @@ function ToggleMenu()
         SendNUIMessage({ action = 'hide' })
     end
 end
+
+-- Direct F1 detection as backup
+Citizen.CreateThread(function()
+    while true do
+        Wait(0)
+        if IsControlJustPressed(0, 288) then -- F1
+            ToggleMenu()
+        end
+    end
+end)
 
 RegisterNUICallback('close', function(data, cb)
     menuOpen = false
@@ -551,21 +565,29 @@ Citizen.CreateThread(function()
 end)
 
 -- ============================================
--- ESP SYSTEM
+-- ESP SYSTEM - Style mirip External ESP
 -- ============================================
 
-local espColors = {
-    player = {r = 255, g = 0, b = 0, a = 255},      -- Red
-    npc = {r = 255, g = 165, b = 0, a = 255},       -- Orange
-    vehicle = {r = 0, g = 255, b = 255, a = 255},   -- Cyan
-    health = {r = 0, g = 255, b = 0, a = 255},      -- Green
-    text = {r = 255, g = 255, b = 255, a = 255}     -- White
+local ESP_Settings = {
+    boxThickness = 2,
+    tracerThickness = 1,
+    tracerOrigin = "bottom", -- "bottom" atau "middle"
+    maxDistance = 500.0
 }
 
-function DrawESPText(text, x, y, scale, r, g, b, a)
+local espColors = {
+    player = {r = 255, g = 0, b = 0},
+    playerFriendly = {r = 0, g = 255, b = 0},
+    npc = {r = 255, g = 165, b = 0},
+    vehicle = {r = 0, g = 255, b = 255},
+    black = {r = 0, g = 0, b = 0}
+}
+
+-- Draw text dengan outline
+function DrawESPText(text, x, y, scale, r, g, b)
     SetTextFont(4)
     SetTextScale(scale, scale)
-    SetTextColour(r, g, b, a)
+    SetTextColour(r, g, b, 255)
     SetTextOutline()
     SetTextCentre(true)
     SetTextEntry("STRING")
@@ -573,60 +595,157 @@ function DrawESPText(text, x, y, scale, r, g, b, a)
     DrawText(x, y)
 end
 
-function Draw3DText(coords, text, scale, r, g, b, a)
+-- Get screen position dari world coords
+function GetScreenPos(coords)
     local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z)
     if onScreen then
-        DrawESPText(text, screenX, screenY, scale, r, g, b, a)
-        return screenX, screenY
+        return true, screenX, screenY
     end
-    return nil, nil
+    return false, 0, 0
 end
 
-function DrawESPBox(entity, r, g, b, a)
-    local coords = GetEntityCoords(entity)
-    local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z)
+-- Draw 2D Box seperti External ESP
+function Draw2DBox(headX, headY, footX, footY, r, g, b)
+    local height = math.abs(footY - headY)
+    local width = height * 0.6
     
-    if onScreen then
-        local camCoords = GetGameplayCamCoord()
-        local dist = #(camCoords - coords)
-        local boxSize = 0.03 / (dist / 50)
-        boxSize = math.max(0.01, math.min(boxSize, 0.08))
-        
-        local halfW = boxSize / 2
-        local halfH = boxSize * 1.5
-        
-        DrawRect(screenX, screenY - halfH, boxSize, 0.002, r, g, b, a)
-        DrawRect(screenX, screenY + halfH, boxSize, 0.002, r, g, b, a)
-        DrawRect(screenX - halfW, screenY, 0.002, halfH * 2, r, g, b, a)
-        DrawRect(screenX + halfW, screenY, 0.002, halfH * 2, r, g, b, a)
-    end
-end
-
-function DrawESPLine(entity, r, g, b, a)
-    local coords = GetEntityCoords(entity)
-    local onScreen, screenX, screenY = World3dToScreen2d(coords.x, coords.y, coords.z)
+    local centerX = (headX + footX) / 2
+    local centerY = (headY + footY) / 2
     
-    if onScreen then
-        DrawLine2D(0.5, 1.0, screenX, screenY, r, g, b, a)
-    end
+    local left = centerX - width / 2
+    local right = centerX + width / 2
+    local top = headY
+    local bottom = footY
+    
+    -- Black outline (border)
+    local t = 0.001
+    local bt = 0.002
+    
+    -- Top line
+    DrawRect(centerX, top, width + bt, t + bt, 0, 0, 0, 255)
+    DrawRect(centerX, top, width, t, r, g, b, 255)
+    
+    -- Bottom line
+    DrawRect(centerX, bottom, width + bt, t + bt, 0, 0, 0, 255)
+    DrawRect(centerX, bottom, width, t, r, g, b, 255)
+    
+    -- Left line
+    DrawRect(left, centerY, t + bt, height + bt, 0, 0, 0, 255)
+    DrawRect(left, centerY, t, height, r, g, b, 255)
+    
+    -- Right line
+    DrawRect(right, centerY, t + bt, height + bt, 0, 0, 0, 255)
+    DrawRect(right, centerY, t, height, r, g, b, 255)
 end
 
-function DrawLine2D(x1, y1, x2, y2, r, g, b, a)
-    local steps = 50
+-- Draw Snapline/Tracer seperti External ESP
+function DrawSnapline(targetX, targetY, r, g, b)
+    local startX, startY
+    
+    if ESP_Settings.tracerOrigin == "middle" then
+        startX = 0.5
+        startY = 0.5
+    else
+        startX = 0.5
+        startY = 1.0
+    end
+    
+    -- Draw line dengan DrawLine native
+    local steps = 100
     for i = 0, steps do
         local t = i / steps
-        local x = x1 + (x2 - x1) * t
-        local y = y1 + (y2 - y1) * t
-        DrawRect(x, y, 0.001, 0.001, r, g, b, a)
+        local x = startX + (targetX - startX) * t
+        local y = startY + (targetY - startY) * t
+        
+        -- Black outline
+        DrawRect(x, y, 0.0015, 0.002, 0, 0, 0, 200)
+        DrawRect(x, y, 0.001, 0.0015, r, g, b, 255)
     end
 end
 
-function GetHealthBar(entity)
-    local health = GetEntityHealth(entity)
-    local maxHealth = GetEntityMaxHealth(entity)
-    if maxHealth == 0 then maxHealth = 200 end
-    local percent = math.floor((health / maxHealth) * 100)
-    return percent
+-- Draw Health Bar di samping kiri box
+function DrawHealthBar(headX, headY, footY, healthPercent, r, g, b)
+    local height = math.abs(footY - headY)
+    local width = height * 0.6
+    local barWidth = 0.004
+    local barX = headX - (width / 2) - 0.008
+    
+    local healthHeight = height * (healthPercent / 100)
+    local healthY = footY - (healthHeight / 2)
+    
+    -- Background bar (black)
+    DrawRect(barX, (headY + footY) / 2, barWidth + 0.002, height + 0.002, 0, 0, 0, 255)
+    
+    -- Health bar (color based on health)
+    local hr, hg, hb = GetHealthColor(healthPercent)
+    DrawRect(barX, healthY, barWidth, healthHeight, hr, hg, hb, 255)
+end
+
+-- Get color based on health (red to green gradient)
+function GetHealthColor(percent)
+    if percent > 50 then
+        local g = 255
+        local r = math.floor(255 * (1 - (percent - 50) / 50))
+        return r, g, 0
+    else
+        local r = 255
+        local g = math.floor(255 * (percent / 50))
+        return r, g, 0
+    end
+end
+
+-- Get entity head and foot positions
+function GetEntityBounds(entity)
+    local coords = GetEntityCoords(entity)
+    local headCoords = vector3(coords.x, coords.y, coords.z + 1.0)
+    local footCoords = vector3(coords.x, coords.y, coords.z - 0.9)
+    return headCoords, footCoords
+end
+
+-- Full ESP draw for entity
+function DrawFullESP(entity, name, dist, color, isPlayer)
+    local headCoords, footCoords = GetEntityBounds(entity)
+    
+    local headOn, headX, headY = GetScreenPos(headCoords)
+    local footOn, footX, footY = GetScreenPos(footCoords)
+    
+    if headOn and footOn then
+        local r, g, b = color.r, color.g, color.b
+        
+        -- 2D Box
+        if toggles.espbox then
+            Draw2DBox(headX, headY, footX, footY, r, g, b)
+        end
+        
+        -- Snapline/Tracer
+        if toggles.espline then
+            DrawSnapline(footX, footY, r, g, b)
+        end
+        
+        -- Health Bar
+        if toggles.esphealth and (isPlayer or toggles.espnpc) then
+            local health = GetEntityHealth(entity)
+            local maxHealth = GetEntityMaxHealth(entity)
+            if maxHealth == 0 then maxHealth = 200 end
+            local healthPercent = math.floor((health / maxHealth) * 100)
+            DrawHealthBar(headX, headY, footY, healthPercent, r, g, b)
+        end
+        
+        -- Name + Distance text
+        local info = name
+        if toggles.espdistance then
+            info = info .. " [" .. math.floor(dist) .. "m]"
+        end
+        if toggles.esphealth then
+            local health = GetEntityHealth(entity)
+            local maxHealth = GetEntityMaxHealth(entity)
+            if maxHealth == 0 then maxHealth = 200 end
+            local healthPercent = math.floor((health / maxHealth) * 100)
+            info = info .. " " .. healthPercent .. "%"
+        end
+        
+        DrawESPText(info, headX, headY - 0.02, 0.28, r, g, b)
+    end
 end
 
 Citizen.CreateThread(function()
@@ -647,30 +766,9 @@ Citizen.CreateThread(function()
                         local coords = GetEntityCoords(targetPed)
                         local dist = #(myCoords - coords)
                         
-                        if dist < 500.0 then
+                        if dist < ESP_Settings.maxDistance then
                             local playerName = GetPlayerName(playerId)
-                            local c = espColors.player
-                            
-                            -- Box
-                            if toggles.espbox then
-                                DrawESPBox(targetPed, c.r, c.g, c.b, c.a)
-                            end
-                            
-                            -- Line
-                            if toggles.espline then
-                                DrawESPLine(targetPed, c.r, c.g, c.b, 150)
-                            end
-                            
-                            -- Text info
-                            local info = playerName
-                            if toggles.espdistance then
-                                info = info .. " [" .. math.floor(dist) .. "m]"
-                            end
-                            if toggles.esphealth then
-                                info = info .. " (" .. GetHealthBar(targetPed) .. "%)"
-                            end
-                            
-                            Draw3DText(vector3(coords.x, coords.y, coords.z + 1.0), info, 0.3, c.r, c.g, c.b, c.a)
+                            DrawFullESP(targetPed, playerName, dist, espColors.player, true)
                         end
                     end
                 end
@@ -687,25 +785,7 @@ Citizen.CreateThread(function()
                         local dist = #(myCoords - coords)
                         
                         if dist < 150.0 then
-                            local c = espColors.npc
-                            
-                            if toggles.espbox then
-                                DrawESPBox(ped, c.r, c.g, c.b, c.a)
-                            end
-                            
-                            if toggles.espline then
-                                DrawESPLine(ped, c.r, c.g, c.b, 100)
-                            end
-                            
-                            local info = "NPC"
-                            if toggles.espdistance then
-                                info = info .. " [" .. math.floor(dist) .. "m]"
-                            end
-                            if toggles.esphealth then
-                                info = info .. " (" .. GetHealthBar(ped) .. "%)"
-                            end
-                            
-                            Draw3DText(vector3(coords.x, coords.y, coords.z + 1.0), info, 0.25, c.r, c.g, c.b, c.a)
+                            DrawFullESP(ped, "NPC", dist, espColors.npc, false)
                         end
                     end
                     success, ped = FindNextPed(handle)
@@ -724,23 +804,8 @@ Citizen.CreateThread(function()
                         local dist = #(myCoords - coords)
                         
                         if dist < 200.0 and dist > 5.0 then
-                            local c = espColors.vehicle
-                            
-                            if toggles.espbox then
-                                DrawESPBox(veh, c.r, c.g, c.b, c.a)
-                            end
-                            
-                            if toggles.espline then
-                                DrawESPLine(veh, c.r, c.g, c.b, 100)
-                            end
-                            
                             local vehName = GetDisplayNameFromVehicleModel(GetEntityModel(veh))
-                            local info = vehName
-                            if toggles.espdistance then
-                                info = info .. " [" .. math.floor(dist) .. "m]"
-                            end
-                            
-                            Draw3DText(vector3(coords.x, coords.y, coords.z + 1.5), info, 0.25, c.r, c.g, c.b, c.a)
+                            DrawFullESP(veh, vehName, dist, espColors.vehicle, false)
                         end
                     end
                     success, veh = FindNextVehicle(handle)
