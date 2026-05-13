@@ -16,38 +16,42 @@
         /* NOTIFICATION */
         .notification {
             position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, rgba(0,0,0,0.9) 0%, rgba(30,30,40,0.95) 100%);
-            border: 1px solid rgba(0,200,255,0.3);
-            border-radius: 12px;
-            padding: 15px 25px;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(20,20,35,0.98) 100%);
+            border: 2px solid rgba(0,200,255,0.5);
+            border-radius: 16px;
+            padding: 25px 40px;
             color: #fff;
             display: none;
-            animation: slideIn 0.4s ease;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(0,200,255,0.2);
-            max-width: 320px;
+            animation: slideIn 0.5s ease;
+            box-shadow: 0 15px 60px rgba(0,0,0,0.7), 0 0 40px rgba(0,200,255,0.3);
+            max-width: 450px;
+            min-width: 380px;
         }
         .notification.show { display: block; }
         .notification h3 { 
             color: #00d4ff; 
-            font-size: 16px; 
-            margin-bottom: 8px;
+            font-size: 26px; 
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            text-shadow: 0 0 10px rgba(0,200,255,0.5);
         }
         .notification p { 
-            font-size: 14px; 
-            color: rgba(255,255,255,0.8);
-            line-height: 1.4;
+            font-size: 18px; 
+            color: rgba(255,255,255,0.9);
+            line-height: 1.5;
         }
         .notification .key {
             background: linear-gradient(135deg, #00d4ff, #0099cc);
-            padding: 2px 10px;
-            border-radius: 4px;
+            padding: 4px 14px;
+            border-radius: 6px;
             font-weight: 700;
+            font-size: 18px;
             color: #000;
+            box-shadow: 0 0 15px rgba(0,200,255,0.5);
         }
         @keyframes slideIn {
             from { transform: translateX(100px); opacity: 0; }
