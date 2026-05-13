@@ -17,8 +17,8 @@
         .hud.show { display: flex; gap: 10px; align-items: flex-end; }
         
         .speedo-main {
-            width: 180px;
-            height: 180px;
+            width: 220px;
+            height: 220px;
             position: relative;
             background: radial-gradient(circle at 50% 50%, rgba(20,20,25,0.95) 0%, rgba(10,10,15,0.98) 100%);
             border-radius: 50%;
@@ -28,8 +28,8 @@
         
         .speedo-ring {
             position: absolute;
-            top: 8px; left: 8px;
-            width: 160px; height: 160px;
+            top: 10px; left: 10px;
+            width: 196px; height: 196px;
             border-radius: 50%;
             border: 2px solid #333;
         }
@@ -42,13 +42,13 @@
         .mark {
             position: absolute;
             width: 2px;
-            height: 10px;
+            height: 12px;
             background: #555;
             left: 50%;
-            top: 12px;
-            transform-origin: 50% 78px;
+            top: 15px;
+            transform-origin: 50% 95px;
         }
-        .mark.major { height: 15px; width: 3px; background: #888; }
+        .mark.major { height: 18px; width: 3px; background: #888; }
         .mark.red { background: #ff4444; }
         
         .mark-label {
@@ -67,8 +67,8 @@
             position: absolute;
             left: 50%;
             bottom: 50%;
-            width: 3px;
-            height: 65px;
+            width: 4px;
+            height: 80px;
             background: linear-gradient(to top, #ff2200 0%, #ff4444 50%, #ff6666 100%);
             transform-origin: bottom center;
             transform: translateX(-50%) rotate(-135deg);
@@ -97,7 +97,7 @@
         }
         
         .speed-val {
-            font-size: 36px;
+            font-size: 44px;
             font-weight: 700;
             color: #fff;
             line-height: 1;
@@ -112,10 +112,10 @@
         
         .gear-display {
             position: absolute;
-            top: 25px;
+            top: 30px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 700;
             color: #00ff88;
             text-shadow: 0 0 8px rgba(0,255,136,0.5);
@@ -232,8 +232,8 @@
             label.className = 'mark-label';
             label.textContent = l.val;
             const rad = (l.angle - 90) * Math.PI / 180;
-            const x = 90 + 58 * Math.cos(rad);
-            const y = 90 + 58 * Math.sin(rad);
+            const x = 110 + 72 * Math.cos(rad);
+            const y = 110 + 72 * Math.sin(rad);
             label.style.left = x + 'px';
             label.style.top = y + 'px';
             label.style.transform = 'translate(-50%, -50%)';

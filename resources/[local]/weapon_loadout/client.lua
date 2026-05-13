@@ -55,29 +55,34 @@ local function GiveAllWeapons(ped)
 end
 
 local lastPed = 0
+local lastModel = 0
 
 RegisterNetEvent('weapon_loadout:give')
 AddEventHandler('weapon_loadout:give', function()
+    Wait(100)
     GiveAllWeapons(PlayerPedId())
 end)
 
 AddEventHandler('playerSpawned', function()
-    Wait(1000)
+    Wait(2000)
     GiveAllWeapons(PlayerPedId())
     lastPed = PlayerPedId()
-    print("^2[WEAPONS] Senjata diberikan saat spawn!^7")
+    lastModel = GetEntityModel(PlayerPedId())
 end)
 
 Citizen.CreateThread(function()
     while true do
-        Wait(500)
+        Wait(100)
         local ped = PlayerPedId()
         
         if DoesEntityExist(ped) and not IsPedDeadOrDying(ped) then
-            if ped ~= lastPed then
+            local model = GetEntityModel(ped)
+            
+            if ped ~= lastPed or model ~= lastModel then
+                Wait(500)
                 GiveAllWeapons(ped)
                 lastPed = ped
-                print("^2[WEAPONS] Ped berubah - senjata diberikan!^7")
+                lastModel = model
             end
             
             SetPedInfiniteAmmoClip(ped, true)
